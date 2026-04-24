@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>V3 Cafe — Fresh Baked with Love</title>
+  <meta name="description"
+    content="V3 Cafe — Order fresh cakes, pastries & custom bakery items. Browse our menu and order via WhatsApp." />
+  <meta property="og:title" content="V3 Cafe — Fresh Baked with Love" />
+  <meta property="og:description" content="Browse fresh cakes, pastries and custom orders from V3 Cafe." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;800&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="style-base.css" />
+  <link rel="stylesheet" href="style-components.css" />
+</head>
+
+<body>
+
+  <!-- ══ HEADER ══ -->
+  <header id="site-header" class="site-header">
+    <div class="header-inner">
+      <a href="#" class="logo-link" id="logo-home">
+        <img src="../cafe_icon.jpg" alt="V3 Cafe" class="logo-img" onerror="this.style.display='none'" />
+        <div class="logo-text">
+          <span class="logo-name">V3 Cafe</span>
+          <span class="logo-tag">Fresh Baked</span>
+        </div>
+      </a>
+      <nav class="header-nav" id="header-nav">
+        <a class="nav-link active" data-scroll="products">Menu</a>
+        <a class="nav-link" data-scroll="categories">Categories</a>
+        <a class="nav-link" id="custom-cake-nav-btn">Custom Cake 🎂</a>
+      </nav>
+      <div class="header-actions">
+        <button class="icon-btn search-toggle-btn" id="search-toggle" aria-label="Search">
+          <span class="icon">🔍</span>
+        </button>
+        <a class="wa-header-btn" id="wa-header-btn" href="#" target="_blank" rel="noopener">
+          <span>📲</span> WhatsApp
+        </a>
+        <button class="hamburger-btn" id="hamburger" aria-label="Menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+    <!-- Mobile search bar -->
+    <div class="header-search-bar" id="header-search-bar">
+      <div class="search-wrap">
+        <span class="search-ico">🔍</span>
+        <input type="search" id="main-search" placeholder="Search cakes, pastries…" autocomplete="off" />
+        <button class="search-clear" id="search-clear" aria-label="Clear">✕</button>
+      </div>
+    </div>
+    <!-- Mobile menu -->
+    <div class="mobile-menu" id="mobile-menu">
+      <a class="mob-link" data-scroll="products">Menu</a>
+      <a class="mob-link" data-scroll="categories">Categories</a>
+      <a class="mob-link" id="custom-cake-mob-btn">Custom Cake 🎂</a>
+    </div>
+  </header>
+
+  <!-- ══ HERO SECTION ══ -->
+  <section id="hero" class="hero-section">
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+      <div class="hero-text">
+        <span class="hero-badge">🧁 Freshly Baked Daily</span>
+        <h1 class="hero-title" id="hero-shop-name">V3 Cafe</h1>
+        <p class="hero-subtitle">Handcrafted cakes, pastries & custom creations made with love</p>
+        <div class="hero-btns">
+          <button class="btn-primary-lg" data-scroll="products">Browse Menu</button>
+          <button class="btn-outline-lg" id="hero-custom-btn">Custom Cake Order 🎂</button>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="hero-img-wrap">
+          <img src="../cafe_icon.jpg" alt="V3 Cafe" class="hero-cafe-img" onerror="this.style.display='none'" />
+          <div class="hero-float f1">🎂</div>
+          <div class="hero-float f2">🧁</div>
+          <div class="hero-float f3">🍰</div>
+          <div class="hero-float f4">🍪</div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-wave">
+      <svg viewBox="0 0 1440 80" preserveAspectRatio="none">
+        <path fill="#fefdf9" d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z" />
+      </svg>
+    </div>
+  </section>
+
+  <!-- ══ FEATURED PRODUCTS ══ -->
+  <section id="featured" class="section-wrap">
+    <div class="section-header">
+      <h2 class="section-title">⭐ Featured Items</h2>
+      <p class="section-sub">Our most loved creations</p>
+    </div>
+    <div id="featured-grid" class="featured-grid">
+      <!-- Skeletons injected by JS -->
+    </div>
+  </section>
+
+  <!-- ══ CATEGORIES ══ -->
+  <section id="categories" class="section-wrap categories-wrap">
+    <div class="section-header">
+      <h2 class="section-title">Browse by Category</h2>
+    </div>
+    <div id="category-chips" class="category-chips">
+      <button class="cat-chip active" data-cat="all">🍽️ All</button>
+      <!-- Dynamic categories inserted by JS -->
+    </div>
+  </section>
+
+  <!-- ══ ALL PRODUCTS ══ -->
+  <section id="products" class="section-wrap">
+    <div class="products-section-head">
+      <div>
+        <h2 class="section-title" id="products-title">Our Menu</h2>
+        <p class="section-sub" id="products-count-label">Loading…</p>
+      </div>
+      <div class="filter-sort-bar">
+        <div class="avail-chips">
+          <button class="avail-chip active" data-avail="all">All</button>
+          <button class="avail-chip" data-avail="available">✅ Available</button>
+          <button class="avail-chip" data-avail="custom">🎨 Custom</button>
+          <button class="avail-chip" data-avail="out of stock">❌ Out of Stock</button>
+        </div>
+        <select id="sort-select" class="sort-select">
+          <option value="default">Sort: Default</option>
+          <option value="price-asc">Price: Low → High</option>
+          <option value="price-desc">Price: High → Low</option>
+          <option value="name-asc">Name: A → Z</option>
+          <option value="newest">Newest First</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Search Results Banner -->
+    <div id="search-banner" class="search-banner hidden">
+      <span id="search-banner-txt">Showing results for ""</span>
+      <button id="clear-search-banner" class="clear-search-btn">✕ Clear</button>
+    </div>
+
+    <div id="products-grid" class="products-grid">
+      <!-- Skeleton loaders then real products -->
+    </div>
+
+    <!-- Load more -->
+    <div id="load-more-wrap" class="load-more-wrap hidden">
+      <button id="load-more-btn" class="btn-load-more">Load More</button>
+    </div>
+  </section>
+
+  <!-- ══ CUSTOM CAKE CTA ══ -->
+  <section class="cta-section">
+    <div class="cta-inner">
+      <div class="cta-icon">🎂</div>
+      <h2 class="cta-title">Want a Custom Cake?</h2>
+      <p class="cta-desc">Tell us your dream cake and we'll make it happen! Special designs, flavors & sizes available.
+      </p>
+      <button class="btn-primary-lg" id="cta-custom-btn">Request Custom Cake</button>
+    </div>
+  </section>
+
+  <!-- ══ FOOTER ══ -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <img src="../cafe_icon.jpg" alt="V3 Cafe" class="footer-logo" onerror="this.style.display='none'" />
+        <div>
+          <span class="footer-name" id="footer-shop-name">V3 Cafe</span>
+          <span class="footer-tagline">Fresh Baked with Love 🧁</span>
+        </div>
+      </div>
+      <div class="footer-address" id="footer-address"></div>
+      <div class="footer-social">
+        <a id="footer-wa" class="social-btn wa-btn" href="#" target="_blank" rel="noopener">📲 WhatsApp</a>
+        <a id="footer-fb" class="social-btn fb-btn" href="#" target="_blank" rel="noopener"
+          style="display:none">Facebook</a>
+        <a id="footer-ig" class="social-btn ig-btn" href="#" target="_blank" rel="noopener"
+          style="display:none">Instagram</a>
+      </div>
+      <p class="footer-copy">© 2025 V3 Cafe. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- ══════════════════════════════════
+     MODALS
+════════════════════════════════════ -->
+
+  <!-- Product Detail Modal -->
+  <div id="product-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Product Detail">
+    <div class="modal-box product-modal-box">
+      <button class="modal-close" id="product-modal-close" aria-label="Close">✕</button>
+      <div class="product-modal-inner">
+        <!-- Gallery -->
+        <div class="pm-gallery">
+          <div class="pm-main-img-wrap">
+            <img id="pm-main-img" src="" alt="" class="pm-main-img" />
+            <div id="pm-img-placeholder" class="pm-img-ph">🧁</div>
+          </div>
+          <div id="pm-thumbnails" class="pm-thumbnails"></div>
+        </div>
+        <!-- Info -->
+        <div class="pm-info">
+          <div class="pm-badges">
+            <span id="pm-avail-badge" class="pm-avail-badge"></span>
+            <span id="pm-category-badge" class="pm-cat-badge"></span>
+          </div>
+          <h2 id="pm-title" class="pm-title"></h2>
+          <div class="pm-price-row">
+            <span id="pm-price" class="pm-price"></span>
+            <span id="pm-mrp" class="pm-mrp hidden"></span>
+            <span id="pm-off" class="pm-off hidden"></span>
+          </div>
+          <p id="pm-desc" class="pm-desc"></p>
+          <div id="pm-ingredients-wrap" class="pm-detail-row hidden">
+            <span class="pm-detail-label">🥚 Ingredients:</span>
+            <span id="pm-ingredients" class="pm-detail-val"></span>
+          </div>
+          <div id="pm-tags-wrap" class="pm-detail-row hidden">
+            <span class="pm-detail-label">🏷️ Tags:</span>
+            <div id="pm-tags" class="pm-tags-list"></div>
+          </div>
+          <div id="pm-note-wrap" class="pm-note hidden">
+            <span>📌</span> <span id="pm-note-txt"></span>
+          </div>
+          <!-- Order Actions -->
+          <div class="pm-actions">
+            <div class="qty-row">
+              <label class="qty-label">Qty:</label>
+              <button class="qty-btn" id="qty-minus">−</button>
+              <span id="qty-val" class="qty-val">1</span>
+              <button class="qty-btn" id="qty-plus">+</button>
+            </div>
+            <button class="btn-wa-order" id="pm-order-btn">
+              <span>📲</span> Order on WhatsApp
+            </button>
+            <button class="btn-share" id="pm-share-btn">
+              <span>🔗</span> Share
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lead Popup (Phone Collection) -->
+  <div id="lead-popup" class="popup-overlay hidden" role="dialog" aria-modal="true">
+    <div class="popup-box">
+      <button class="popup-close" id="popup-close" aria-label="Close">✕</button>
+      <div class="popup-icon">🎁</div>
+      <h3 class="popup-title">Get Exclusive Offers!</h3>
+      <p class="popup-desc">Enter your phone number to receive special discounts and new product alerts from V3 Cafe.
+      </p>
+      <form id="lead-form">
+        <div class="popup-input-wrap">
+          <span class="popup-input-icon">📱</span>
+          <input type="tel" id="lead-phone" placeholder="98XXXXXXXX" maxlength="15" autocomplete="tel" required />
+        </div>
+        <input type="text" id="lead-name" placeholder="Your name (optional)" class="popup-name-input"
+          autocomplete="name" />
+        <button type="submit" id="lead-submit-btn" class="btn-popup-submit">
+          <span id="lead-btn-txt">Get Offers 🎉</span>
+          <span id="lead-spinner" class="hidden">Saving…</span>
+        </button>
+        <p class="popup-privacy">🔒 Your number is safe. We don't spam.</p>
+      </form>
+    </div>
+  </div>
+
+  <!-- Custom Cake Request Modal -->
+  <div id="custom-modal" class="modal-overlay hidden" role="dialog" aria-modal="true">
+    <div class="modal-box custom-modal-box">
+      <button class="modal-close" id="custom-modal-close">✕</button>
+      <div class="custom-modal-inner">
+        <div class="custom-modal-icon">🎂</div>
+        <h2 class="custom-modal-title">Custom Cake Request</h2>
+        <p class="custom-modal-desc">Tell us your dream cake — we'll make it happen!</p>
+        <form id="custom-cake-form">
+          <div class="cm-field">
+            <label>Your Name</label>
+            <input type="text" id="cc-name" class="cm-input" placeholder="Your full name" required />
+          </div>
+          <div class="cm-field">
+            <label>Phone Number *</label>
+            <input type="tel" id="cc-phone" class="cm-input" placeholder="98XXXXXXXX" required />
+          </div>
+          <div class="cm-field">
+            <label>Cake Description *</label>
+            <textarea id="cc-desc" class="cm-input cm-textarea" rows="3"
+              placeholder="Describe your dream cake: flavor, size, design, occasion…" required></textarea>
+          </div>
+          <div class="cm-row-2">
+            <div class="cm-field">
+              <label>Occasion</label>
+              <select id="cc-occasion" class="cm-input">
+                <option value="">— Select —</option>
+                <option>Birthday</option>
+                <option>Wedding</option>
+                <option>Anniversary</option>
+                <option>Baby Shower</option>
+                <option>Graduation</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="cm-field">
+              <label>Delivery Date</label>
+              <input type="date" id="cc-date" class="cm-input" />
+            </div>
+          </div>
+          <div class="cm-field">
+            <label>Budget Range (Rs.)</label>
+            <select id="cc-budget" class="cm-input">
+              <option value="">— Select —</option>
+              <option value="500-1000">Rs. 500 – 1,000</option>
+              <option value="1000-2000">Rs. 1,000 – 2,000</option>
+              <option value="2000-5000">Rs. 2,000 – 5,000</option>
+              <option value="5000+">Rs. 5,000+</option>
+            </select>
+          </div>
+          <button type="submit" class="btn-wa-order" id="custom-submit-btn" style="width:100%;margin-top:.5rem">
+            <span>📲</span> Send Request on WhatsApp
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Back to Top -->
+  <button id="back-to-top" class="back-to-top hidden" aria-label="Back to top">↑</button>
+
+  <!-- Scripts -->
+  <script type="module" src="app-main.js"></script>
+</body>
+
+</html>

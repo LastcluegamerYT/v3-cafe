@@ -1,0 +1,17 @@
+# Netlify _redirects
+# Docs: https://docs.netlify.com/routing/redirects/
+
+# ── Admin secret URL guard ──
+# /admin alone with no code → redirect home (blocked)
+/admin          /       302
+
+# /admin/CODE → rewrite to admin panel (JS will verify the code)
+/admin/*        /admin/index.html   200
+
+# ── Customer page routes ──
+# Root is handled by /index.html (splash page)
+# /customer/* is served directly as static files (no rewrite needed)
+
+# ── Catch-all: anything not matched → customer home ──
+# (comment this out if you want a real 404 page)
+# /*              /customer/index.html    200

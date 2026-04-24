@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Page Not Found — V3 Cafe</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:'Outfit',sans-serif;
+      background:linear-gradient(135deg,#78350f,#b45309,#f59e0b);
+      min-height:100vh;display:flex;align-items:center;justify-content:center;
+      text-align:center;padding:2rem;
+    }
+    .box{
+      background:rgba(255,255,255,.12);
+      backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+      border:1px solid rgba(255,255,255,.25);
+      border-radius:28px;padding:3rem 2rem;
+      max-width:400px;width:100%;
+      animation:pop .5s cubic-bezier(.34,1.56,.64,1);
+    }
+    @keyframes pop{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+    .icon{font-size:4rem;margin-bottom:1rem}
+    h1{font-size:1.8rem;font-weight:800;color:#fff;margin-bottom:.5rem}
+    p{color:rgba(255,255,255,.75);font-size:.95rem;line-height:1.6;margin-bottom:1.75rem}
+    a{
+      display:inline-block;
+      background:#fff;color:#92400e;
+      font-weight:700;font-size:.9rem;
+      padding:.7rem 1.75rem;border-radius:99px;
+      text-decoration:none;
+      box-shadow:0 6px 20px rgba(0,0,0,.2);
+      transition:transform .2s;
+    }
+    a:hover{transform:translateY(-2px)}
+  </style>
+</head>
+<body>
+  <div class="box">
+    <div class="icon">🍰</div>
+    <h1>Page Not Found</h1>
+    <p>Oops! This page doesn't exist. Maybe it was eaten?<br/>Let's get you back to our menu.</p>
+    <a href="/">🏠 Back to Home</a>
+  </div>
+</body>
+</html>

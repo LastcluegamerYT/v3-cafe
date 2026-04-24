@@ -1,0 +1,42 @@
+[build]
+  publish = "."
+
+# ── Admin secret URL: /admin/CODE → admin panel ──
+[[redirects]]
+  from   = "/admin"
+  to     = "/"
+  status = 302
+
+[[redirects]]
+  from   = "/admin/*"
+  to     = "/admin/index.html"
+  status = 200
+
+# ── SPA fallback for customer folder ──
+[[redirects]]
+  from   = "/customer"
+  to     = "/customer/index.html"
+  status = 200
+
+# ── Headers: security + cache ──
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  for = "/*.jpg"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"

@@ -1,0 +1,186 @@
+```txt
+📦 connection.js — Quick Usage Guide (Smart Bakery Platform)
+
+This module handles ALL Firebase Realtime DB operations:
+✔ Products (CRUD)
+✔ Leads (customer interest)
+✔ Analytics (views, clicks, visitors)
+✔ Realtime subscriptions
+✔ WhatsApp + sharing utilities
+
+-------------------------------------
+🚀 BASIC SETUP
+-------------------------------------
+import bakeryDB from "./connection.js";
+
+-------------------------------------
+🧁 PRODUCTS (MAIN FEATURE)
+-------------------------------------
+
+1. Get all products
+→ Use on homepage / product listing
+const products = await bakeryDB.getAllProducts();
+
+2. Get featured products
+→ Use on landing page highlight
+const featured = await bakeryDB.getFeaturedProducts(6);
+
+3. Get single product
+→ Use on product detail page
+const product = await bakeryDB.getProductById(id);
+// OR
+const product = await bakeryDB.getProductBySlug(slug);
+
+4. Search products
+→ Use in search bar
+const results = await bakeryDB.searchProducts("cake");
+
+5. Filter by category
+→ Use in category filter UI
+const cakes = await bakeryDB.getProductsByCategory("cake");
+
+-------------------------------------
+🛠️ ADMIN (CRUD OPERATIONS)
+-------------------------------------
+
+1. Create product
+→ Admin adds new item
+await bakeryDB.createProduct({
+  title: "Chocolate Cake",
+  price: 500,
+  category: "Cake",
+  images: ["url1", "url2"]
+});
+
+2. Update product
+→ Admin edits item
+await bakeryDB.updateProduct(productId, {
+  price: 600,
+  availability: "out of stock"
+});
+
+3. Delete product
+→ Admin removes item
+await bakeryDB.deleteProduct(productId);
+
+-------------------------------------
+📸 IMAGE HANDLING
+-------------------------------------
+
+- mainImage → used for homepage preview
+- images[] → used for product detail gallery
+
+Use:
+const detail = bakeryDB.buildProductDetail(product);
+
+-------------------------------------
+📲 WHATSAPP ORDER SYSTEM
+-------------------------------------
+
+const url = bakeryDB.buildWhatsAppUrl({
+  phoneNumber: "977XXXXXXXXXX",
+  product,
+  qty: 1
+});
+
+window.open(url);
+
+-------------------------------------
+🔗 SHARE SYSTEM
+-------------------------------------
+
+const link = bakeryDB.buildShareLink({
+  baseUrl: "https://your-site.com",
+  product
+});
+
+-------------------------------------
+👤 LEADS (PHONE COLLECTION)
+-------------------------------------
+
+1. Save phone (popup)
+await bakeryDB.addLead({
+  phone: "98XXXXXXXX",
+  source: "popup"
+});
+
+2. Popup control
+if (bakeryDB.shouldShowLeadPopup()) {
+  // show popup
+  bakeryDB.markLeadPopupSeen();
+}
+
+-------------------------------------
+📊 ANALYTICS
+-------------------------------------
+
+1. Page visit
+await bakeryDB.trackPageView({ path: "/" });
+
+2. Product view
+await bakeryDB.incrementProductView(productId);
+
+3. Product click (order button)
+await bakeryDB.incrementProductClick(productId);
+
+4. Dashboard stats (admin)
+const stats = await bakeryDB.getDashboardStats();
+
+-------------------------------------
+⚡ REALTIME (LIVE UPDATES)
+-------------------------------------
+
+1. Listen all products
+bakeryDB.subscribeProducts((products) => {
+  render(products);
+});
+
+2. Listen single product
+bakeryDB.subscribeProduct(productId, (product) => {
+  updateUI(product);
+});
+
+3. Listen leads (admin panel)
+bakeryDB.subscribeLeads((leads) => {
+  showLeads(leads);
+});
+
+-------------------------------------
+⚡ PERFORMANCE NOTES
+-------------------------------------
+
+✔ Built-in caching (10s)
+✔ Fast batch operations
+✔ Optimized sorting
+✔ Minimal network calls
+
+-------------------------------------
+🧠 WHEN TO USE WHAT
+-------------------------------------
+
+Homepage → getFeaturedProducts()
+Product list → getAllProducts()
+Product page → getProductById()
+Search → searchProducts()
+Admin panel → create/update/deleteProduct()
+Popup → addLead()
+Analytics → trackPageView(), incrementProductView()
+Realtime UI → subscribeProducts()
+
+-------------------------------------
+✅ SUMMARY
+-------------------------------------
+
+This module = FULL BACKEND LAYER
+
+You DO NOT need:
+❌ Direct Firebase calls
+❌ Extra API layer
+❌ Complex logic
+
+Just call functions → done.
+
+-------------------------------------
+🔥 END
+-------------------------------------
+```

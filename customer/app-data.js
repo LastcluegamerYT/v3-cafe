@@ -235,12 +235,6 @@ function _composeOrderMessage(product, qty) {
         if (url && url !== product.mainImage && imageUrls.length < 5) imageUrls.push(url);
     }
 
-    // Product page link (plain, not pre-encoded — outer encodeURIComponent handles it)
-    let productLink = "";
-    try {
-        const base = window.location.href.split("#")[0].split("?")[0];
-        productLink = `${base}#product=${product.slug || product.id}`;
-    } catch (_) {}
 
     const lines = [
         `Hello! 🙏 I'd like to *pre-order* from *V3 Cafe*`,
@@ -255,10 +249,10 @@ function _composeOrderMessage(product, qty) {
 
     if (product.note)         lines.push(`📌 Note: ${product.note}`);
     if (product.whatsappText) lines.push(``, product.whatsappText);
-    if (productLink)          lines.push(``, `🔗 View Product & Photos:`, productLink);
 
+    // Photos — listed independently, no product page link
     if (imageUrls.length) {
-        lines.push(``, `🖼️ Photo${imageUrls.length > 1 ? "s" : ""}:`);
+        lines.push(``);
         imageUrls.forEach((url, i) => lines.push(`${i + 1}. ${url}`));
     }
 

@@ -250,7 +250,14 @@ function _composeOrderMessage(product, qty) {
     if (product.note)         lines.push(`📌 Note: ${product.note}`);
     if (product.whatsappText) lines.push(``, product.whatsappText);
 
-    // Photos — listed independently, no product page link
+    // Product page link — standalone
+    try {
+        const base = window.location.href.split("#")[0].split("?")[0];
+        const productLink = `${base}#product=${product.slug || product.id}`;
+        lines.push(``, `🔗 ${productLink}`);
+    } catch (_) {}
+
+    // Photo URLs — independently numbered, no combined header
     if (imageUrls.length) {
         lines.push(``);
         imageUrls.forEach((url, i) => lines.push(`${i + 1}. ${url}`));

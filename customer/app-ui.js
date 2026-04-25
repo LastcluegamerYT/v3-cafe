@@ -146,7 +146,7 @@ function buildCardHTML(p) {
                 <button class="btn-view"  data-action="view"  data-id="${safeId}">👁 Details</button>
                 <button class="btn-order ${isOut ? "disabled" : ""}"
                     data-action="order" data-id="${safeId}" ${isOut ? "disabled" : ""}>
-                    📲 Order
+                    📲 Pre-Order
                 </button>
             </div>
         </div>
@@ -160,8 +160,8 @@ export async function renderFeatured() {
     const container = document.getElementById("featured-grid");
     const section   = document.getElementById("featured");
     if (!container) return;
-
-    showSkeletons("featured-grid", 4);
+    // Note: app-main already called showSkeletons("featured-grid", 4) before this,
+    // so we do NOT call it again here — avoids visible re-flash.
     try {
         const featured = await fetchFeatured(6);
         if (!featured.length) {
@@ -377,8 +377,13 @@ export async function openProductModal(id) {
     populateProductModal(detail);
     openModal("product-modal");
 
-    // Update URL hash (no scroll jump)
-    history.pushState(null, "", `#product=${encodeURIComponent(product.slug || product.id)}`);
+    // Update URL — use replaceState so the Back button returns to the previous page
+    // rather than cycling through each product the user viewed.
+    const slug = product.slug || product.id;
+    const newHash = `#product=${encodeURIComponent(slug)}`;
+    if (window.location.hash !== newHash) {
+        history.replaceState(null, "", newHash);
+    }
 }
 
 function populateProductModal(p) {
@@ -458,7 +463,7 @@ function populateProductModal(p) {
             orderBtn.style.boxShadow  = "none";
         } else {
             orderBtn.disabled = false;
-            orderBtn.innerHTML = `<span>📲</span> Order on WhatsApp`;
+            orderBtn.innerHTML = `<span>📲</span> Pre-Order via WhatsApp`;
             orderBtn.style.background = "";
             orderBtn.style.boxShadow  = "";
         }
@@ -527,12 +532,13 @@ export function initModalControls() {
     // Product modal close
     document.getElementById("product-modal-close")?.addEventListener("click", () => {
         closeModal("product-modal");
-        history.pushState(null, "", window.location.pathname + window.location.search);
+        // Clear the hash — replaceState keeps forward/back history clean
+        history.replaceState(null, "", window.location.pathname + window.location.search);
     });
     document.getElementById("product-modal")?.addEventListener("click", e => {
         if (e.target === e.currentTarget) {
             closeModal("product-modal");
-            history.pushState(null, "", window.location.pathname + window.location.search);
+            history.replaceState(null, "", window.location.pathname + window.location.search);
         }
     });
 
@@ -576,10 +582,11 @@ export function initModalControls() {
         if (e.key === "Escape") {
             if (!document.getElementById("product-modal")?.classList.contains("hidden")) {
                 closeModal("product-modal");
-                history.pushState(null, "", window.location.pathname + window.location.search);
-            } else {
+                history.replaceState(null, "", window.location.pathname + window.location.search);
+            } else if (!document.getElementById("custom-modal")?.classList.contains("hidden")) {
                 closeModal("custom-modal");
             }
+            // lead-popup ESC is handled in app-popup.js initLeadForm()
         }
     });
 }

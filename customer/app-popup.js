@@ -1,51 +1,50 @@
-// app-popup.js — Lead popup, WhatsApp ordering, share, custom cake form
-// No circular imports — openModal/closeModal/showToast imported from app-ui.js only
+// app-popup.js — Lead popup, WhatsApp order, share, custom cake form
 
-import { openModal, closeModal, showToast } from "./app-ui.js";
 import {
     submitLead,
-    buildOrderUrl,
+    buildOrderUrlSync,
     buildCustomCakeWhatsAppUrl,
     getProductShareUrl,
     shouldShowLeadPopup,
-    safeTrackInterest
+    markLeadPopupSeen
 } from "./app-data.js";
 
+import { openModal, closeModal, showToast } from "./app-ui.js";
+
 // ══════════════════════════════════════════
-//  LEAD POPUP
+//  LEAD POPUP (60s trigger + exit intent)
 // ══════════════════════════════════════════
-const POPUP_DELAY_MS = 60_000; // 60 seconds
+const POPUP_DELAY_MS = 60_000;
 let _popupTimer  = null;
 let _popupShown  = false;
 let _exitBound   = false;
 
 export function initLeadPopup() {
-    // Already shown or permanently dismissed
+    // Don't show if already submitted / dismissed
     if (!shouldShowLeadPopup()) return;
-    // Already dismissed in this session
+    // Don't show if dismissed this session
     if (sessionStorage.getItem("v3cafe_popup_dismissed")) return;
 
-    // Primary trigger: after 60 seconds
     _popupTimer = setTimeout(() => {
-        if (!_popupShown) _showLeadPopup();
+        if (!_popupShown) showLeadPopup();
     }, POPUP_DELAY_MS);
 
-    // Secondary trigger: exit intent (desktop — mouse leaves top of page)
-    if (!_exitBound) {
+    // Exit intent (mouse leaves top of viewport — desktop only)
+    if (!_exitBound && window.matchMedia("(pointer:fine)").matches) {
+        document.addEventListener("mouseleave", _exitIntentHandler);
         _exitBound = true;
-        document.addEventListener("mouseleave", _handleExitIntent);
     }
 }
 
-function _handleExitIntent(e) {
-    if (e.clientY <= 5 && !_popupShown && shouldShowLeadPopup()) {
-        if (sessionStorage.getItem("v3cafe_popup_dismissed")) return;
+function _exitIntentHandler(e) {
+    if (e.clientY <= 5 && !_popupShown && shouldShowLeadPopup()
+        && !sessionStorage.getItem("v3cafe_popup_dismissed")) {
         clearTimeout(_popupTimer);
-        _showLeadPopup();
+        showLeadPopup();
     }
 }
 
-function _showLeadPopup() {
+function showLeadPopup() {
     if (_popupShown) return;
     _popupShown = true;
     openModal("lead-popup");
@@ -53,11 +52,15 @@ function _showLeadPopup() {
 
 export function cleanupPopup() {
     clearTimeout(_popupTimer);
-    document.removeEventListener("mouseleave", _handleExitIntent);
-    _exitBound = false;
+    if (_exitBound) {
+        document.removeEventListener("mouseleave", _exitIntentHandler);
+        _exitBound = false;
+    }
 }
 
-// ── Lead Form ──
+// ══════════════════════════════════════════
+//  LEAD FORM
+// ══════════════════════════════════════════
 export function initLeadForm() {
     const form     = document.getElementById("lead-form");
     const closeBtn = document.getElementById("popup-close");
@@ -73,17 +76,25 @@ export function initLeadForm() {
     }
 
     closeBtn?.addEventListener("click", dismissPopup);
+
     overlay?.addEventListener("click", e => {
         if (e.target === e.currentTarget) dismissPopup();
+    });
+
+    // ESC key closes the lead popup too
+    document.addEventListener("keydown", e => {
+        if (e.key === "Escape" && !overlay?.classList.contains("hidden")) {
+            dismissPopup();
+        }
     });
 
     form?.addEventListener("submit", async e => {
         e.preventDefault();
 
-        const phone = (phoneInp?.value || "").trim();
-        const name  = (nameInp?.value  || "").trim();
-
+        const phone      = (phoneInp?.value || "").trim();
+        const name       = (nameInp?.value  || "").trim();
         const cleanPhone = phone.replace(/\D/g, "");
+
         if (!cleanPhone || cleanPhone.length < 7) {
             showToast("Please enter a valid phone number.", "warning");
             phoneInp?.focus();
@@ -91,9 +102,9 @@ export function initLeadForm() {
         }
 
         // Loading state
-        if (btnTxt)  btnTxt.classList.add("hidden");
-        if (spinner) spinner.classList.remove("hidden");
-        if (form)    form.style.pointerEvents = "none";
+        btnTxt?.classList.add("hidden");
+        spinner?.classList.remove("hidden");
+        if (form) form.style.pointerEvents = "none";
 
         try {
             await submitLead({
@@ -103,52 +114,75 @@ export function initLeadForm() {
                 page:   window.location.pathname
             });
             closeModal("lead-popup");
-            showToast("🎉 Thank you! You'll receive exclusive offers.", "success", 5000);
+            showToast("🎉 Thank you! We'll send you exclusive offers.", "success", 4500);
         } catch (err) {
-            showToast("❌ " + (err.message || "Something went wrong. Try again."), "error");
+            showToast("❌ " + (err.message || "Could not save. Try again."), "error");
         } finally {
-            if (btnTxt)  btnTxt.classList.remove("hidden");
-            if (spinner) spinner.classList.add("hidden");
-            if (form)    form.style.pointerEvents = "";
+            btnTxt?.classList.remove("hidden");
+            spinner?.classList.add("hidden");
+            if (form) form.style.pointerEvents = "";
         }
-    });
-
-    // Allow only digits + common phone chars
-    phoneInp?.addEventListener("input", e => {
-        const cleaned = e.target.value.replace(/[^\d\s\+\-\(\)]/g, "");
-        if (e.target.value !== cleaned) e.target.value = cleaned;
     });
 }
 
 // ══════════════════════════════════════════
 //  WHATSAPP ORDER
+//
+//  DEVICE BEHAVIOUR (wa.me handles automatically):
+//   📱 Mobile  → Opens WhatsApp app directly
+//   💻 Laptop  → Opens web.whatsapp.com in browser
+//   WhatsApp NOT installed  → wa.me shows download page
+//
+//  POPUP-BLOCKER FIX:
+//   Settings are preloaded at startup, so buildOrderUrlSync()
+//   is 100% SYNCHRONOUS — no await at all — window.open()
+//   is called within the user-gesture context and NEVER blocked.
 // ══════════════════════════════════════════
-export async function handleOrder(product, qty = 1) {
+export function handleOrder(product, qty = 1) {
     if (!product) return;
 
     const avail = (product.availability || "available").toLowerCase();
     if (avail === "out of stock") {
-        showToast("❌ This item is currently out of stock.", "error");
+        showToast("❌ This item is out of stock.", "error");
         return;
     }
 
+    // Build URL synchronously (settings already cached at startup)
+    let url;
     try {
-        const url = await buildOrderUrl(product, qty);
-        _openWhatsApp(url);
-        safeTrackInterest({
-            type:      "order_click",
-            productId: product.id || "",
-            page:      window.location.pathname
-        });
+        url = buildOrderUrlSync(product, qty);
     } catch (err) {
-        console.error("[popup] handleOrder:", err);
-        showToast("Could not open WhatsApp. Please try again.", "error");
+        showToast(err.message || "WhatsApp not configured.", "error", 6000);
+        return;
+    }
+
+    // Open WhatsApp — fully inside user-gesture context, never popup-blocked
+    // • Mobile   → Opens WhatsApp app
+    // • Laptop   → Opens web.whatsapp.com
+    _openLink(url);
+    showToast("📲 Opening WhatsApp…", "info", 2000);
+}
+
+// Robust link opener — works on all devices:
+// 1. window.open (desktop Chrome + Android)
+// 2. <a> click fallback (iOS Safari WebView, popup-blocked)
+function _openLink(url) {
+    const win = window.open(url, "_blank");
+    if (!win || win.closed || typeof win.closed === "undefined") {
+        _anchorOpen(url);
     }
 }
 
-function _openWhatsApp(url) {
-    const win = window.open(url, "_blank", "noopener,noreferrer");
-    if (!win) window.location.href = url; // fallback if popup blocked
+// Anchor-click fallback — bypasses popup-blockers on iOS Safari
+function _anchorOpen(url) {
+    const a = document.createElement("a");
+    a.href   = url;
+    a.target = "_blank";
+    a.rel    = "noopener noreferrer";
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => a.remove(), 200);
 }
 
 // ══════════════════════════════════════════
@@ -158,27 +192,26 @@ export async function handleShare(product) {
     if (!product) return;
 
     const shareUrl   = getProductShareUrl(product);
-    const shareTitle = `${product.title || ""} — V3 Cafe`;
-    const shareText  = `Check out this from V3 Cafe: ${product.title || ""}`;
+    const shareTitle = `${product.title} — V3 Cafe`;
+    const shareText  = `Check out this item from V3 Cafe: ${product.title}`;
 
-    // Web Share API (mobile browsers, modern desktop)
+    // Web Share API (mobile-native share sheet)
     if (navigator.share) {
         try {
             await navigator.share({ title: shareTitle, text: shareText, url: shareUrl });
             return;
         } catch (err) {
-            // User cancelled — don't show error
-            if (err.name === "AbortError") return;
+            if (err.name === "AbortError") return; // user cancelled — do nothing
         }
     }
 
     // Clipboard fallback
     try {
         await navigator.clipboard.writeText(shareUrl);
-        showToast("🔗 Link copied to clipboard!", "success");
+        showToast("🔗 Product link copied to clipboard!", "success");
     } catch (_) {
-        // Last resort: prompt
-        window.prompt("Copy this link to share:", shareUrl);
+        // Last resort — prompt dialog
+        window.prompt("Copy this product link:", shareUrl);
     }
 }
 
@@ -193,27 +226,21 @@ export function initCustomCakeForm() {
     const form      = document.getElementById("custom-cake-form");
     const submitBtn = document.getElementById("custom-submit-btn");
 
-    // Set minimum delivery date to today
+    // Set minimum date to today
     const dateInp = document.getElementById("cc-date");
     if (dateInp) {
         dateInp.min = new Date().toISOString().split("T")[0];
     }
 
-    // Phone input — digits only
-    const ccPhone = document.getElementById("cc-phone");
-    ccPhone?.addEventListener("input", e => {
-        e.target.value = e.target.value.replace(/[^\d\s\+\-\(\)]/g, "");
-    });
-
     form?.addEventListener("submit", async e => {
         e.preventDefault();
 
-        const name     = _getVal("cc-name");
-        const phone    = _getVal("cc-phone").replace(/\D/g, "");
-        const desc     = _getVal("cc-desc");
-        const occasion = _getVal("cc-occasion");
-        const date     = _getVal("cc-date");
-        const budget   = _getVal("cc-budget");
+        const name     = getVal("cc-name");
+        const phone    = getVal("cc-phone").replace(/\D/g, "");
+        const desc     = getVal("cc-desc");
+        const occasion = getVal("cc-occasion");
+        const date     = getVal("cc-date");
+        const budget   = getVal("cc-budget");
 
         if (!phone || phone.length < 7) {
             showToast("Please enter a valid phone number.", "error");
@@ -221,37 +248,31 @@ export function initCustomCakeForm() {
             return;
         }
         if (!desc) {
-            showToast("Please describe your dream cake.", "error");
+            showToast("Please describe the cake you want.", "error");
             document.getElementById("cc-desc")?.focus();
             return;
         }
 
         if (submitBtn) {
-            submitBtn.disabled  = true;
-            submitBtn.innerHTML = `<span>⏳</span> Opening WhatsApp…`;
+            submitBtn.disabled   = true;
+            submitBtn.innerHTML  = `<span>⏳</span> Opening WhatsApp…`;
         }
 
         try {
-            // Save lead non-blocking
-            submitLead({
-                phone,
-                name,
-                source: "custom_cake_request",
-                page:   window.location.pathname
-            }).catch(() => {});
+            // Save as lead (non-blocking, best-effort)
+            submitLead({ phone, name, source: "custom_cake_request", page: window.location.pathname }).catch(() => {});
 
             const url = await buildCustomCakeWhatsAppUrl({ name, desc, occasion, date, budget });
-
             closeModal("custom-modal");
             form.reset();
-            // Reset min date after reset
-            if (dateInp) dateInp.min = new Date().toISOString().split("T")[0];
-
-            _openWhatsApp(url);
-            showToast("📲 Opening WhatsApp with your custom cake request!", "success", 4000);
+            // _openLink is sync, no popup-block risk here since buildCustomCakeWhatsAppUrl
+            // is fast (uses cached _cachedWaNumber), but we call _openLink after await.
+            // If browser blocks it: anchorOpen fallback handles it.
+            _openLink(url);
+            showToast("📲 WhatsApp opened with your request!", "success", 3000);
 
         } catch (err) {
-            showToast("Error: " + (err.message || "Please try again."), "error");
+            showToast("Error: " + (err.message || "Please try again."), "error", 5000);
         } finally {
             if (submitBtn) {
                 submitBtn.disabled  = false;
@@ -261,7 +282,7 @@ export function initCustomCakeForm() {
     });
 }
 
-// ── Helper ──
-function _getVal(id) {
+// ── Tiny helper ──
+function getVal(id) {
     return (document.getElementById(id)?.value || "").trim();
 }

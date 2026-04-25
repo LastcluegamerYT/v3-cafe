@@ -209,7 +209,7 @@ const memoryCache = {
     productBySlug: new Map(),
 };
 
-const CACHE_TTL = 10_000; // small TTL to keep UI snappy without stale data
+const CACHE_TTL = 30_000; // 30 seconds — safe because writes call invalidateCache() immediately
 
 function cacheProducts(list) {
     const snapshot = list.slice();

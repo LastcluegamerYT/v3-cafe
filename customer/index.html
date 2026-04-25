@@ -7,8 +7,21 @@
   <title>V3 Cafe — Fresh Baked with Love</title>
   <meta name="description"
     content="V3 Cafe — Order fresh cakes, pastries & custom bakery items. Browse our menu and order via WhatsApp." />
+  <!-- Open Graph (WhatsApp / Facebook share preview) -->
+  <meta property="og:type" content="website" />
   <meta property="og:title" content="V3 Cafe — Fresh Baked with Love" />
-  <meta property="og:description" content="Browse fresh cakes, pastries and custom orders from V3 Cafe." />
+  <meta property="og:description"
+    content="Browse fresh cakes, pastries and custom orders from V3 Cafe. Order via WhatsApp!" />
+  <meta property="og:image" content="../cafe_icon.jpg" />
+  <meta property="og:image:alt" content="V3 Cafe Logo" />
+  <!-- Twitter card -->
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="V3 Cafe — Fresh Baked with Love" />
+  <meta name="twitter:description" content="Fresh cakes, pastries and custom orders from V3 Cafe." />
+  <meta name="twitter:image" content="../cafe_icon.jpg" />
+  <!-- Favicon -->
+  <link rel="icon" type="image/jpeg" href="../cafe_icon.jpg" />
+  <link rel="apple-touch-icon" href="../cafe_icon.jpg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
@@ -70,7 +83,7 @@
       <div class="hero-text">
         <span class="hero-badge">🧁 Freshly Baked Daily</span>
         <h1 class="hero-title" id="hero-shop-name">V3 Cafe</h1>
-        <p class="hero-subtitle">Handcrafted cakes, pastries & custom creations made with love</p>
+        <p class="hero-subtitle">Order ahead on WhatsApp &amp; pick up fresh from our store 🏪</p>
         <div class="hero-btns">
           <button class="btn-primary-lg" data-scroll="products">Browse Menu</button>
           <button class="btn-outline-lg" id="hero-custom-btn">Custom Cake Order 🎂</button>
@@ -184,7 +197,7 @@
         <a id="footer-ig" class="social-btn ig-btn" href="#" target="_blank" rel="noopener"
           style="display:none">Instagram</a>
       </div>
-      <p class="footer-copy">© 2025 V3 Cafe. All rights reserved.</p>
+      <p class="footer-copy">&copy; <span id="footer-year">2025</span> V3 Cafe. All rights reserved.</p>
     </div>
   </footer>
 
@@ -193,7 +206,7 @@
 ════════════════════════════════════ -->
 
   <!-- Product Detail Modal -->
-  <div id="product-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Product Detail">
+  <div id="product-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="pm-title">
     <div class="modal-box product-modal-box">
       <button class="modal-close" id="product-modal-close" aria-label="Close">✕</button>
       <div class="product-modal-inner">
@@ -238,7 +251,7 @@
               <button class="qty-btn" id="qty-plus">+</button>
             </div>
             <button class="btn-wa-order" id="pm-order-btn">
-              <span>📲</span> Order on WhatsApp
+              <span>📲</span> Pre-Order via WhatsApp
             </button>
             <button class="btn-share" id="pm-share-btn">
               <span>🔗</span> Share
@@ -250,11 +263,11 @@
   </div>
 
   <!-- Lead Popup (Phone Collection) -->
-  <div id="lead-popup" class="popup-overlay hidden" role="dialog" aria-modal="true">
+  <div id="lead-popup" class="popup-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="lead-popup-title">
     <div class="popup-box">
       <button class="popup-close" id="popup-close" aria-label="Close">✕</button>
       <div class="popup-icon">🎁</div>
-      <h3 class="popup-title">Get Exclusive Offers!</h3>
+      <h3 class="popup-title" id="lead-popup-title">Get Exclusive Offers!</h3>
       <p class="popup-desc">Enter your phone number to receive special discounts and new product alerts from V3 Cafe.
       </p>
       <form id="lead-form">

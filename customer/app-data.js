@@ -55,6 +55,7 @@ import { ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-da
 
 let _shopSettings    = null;
 let _settingsFetched = false;
+let _cachedWaNumber  = ""; // sync-accessible after preload
 
 export async function getShopSettings() {
     if (_settingsFetched) return _shopSettings || {};
@@ -64,6 +65,9 @@ export async function getShopSettings() {
     } catch (_) {
         _shopSettings = {};
     }
+    // Cache WA number for sync access
+    _cachedWaNumber = ((_shopSettings && _shopSettings.whatsapp)
+        ? String(_shopSettings.whatsapp) : "").replace(/\D/g, "");
     _settingsFetched = true;
     return _shopSettings;
 }
@@ -71,13 +75,19 @@ export async function getShopSettings() {
 export function clearSettingsCache() {
     _shopSettings    = null;
     _settingsFetched = false;
+    _cachedWaNumber  = "";
 }
 
+// Async version (for settings UI / initial load)
 export async function getWhatsAppNumber() {
-    const s = await getShopSettings();
-    const raw = (s && s.whatsapp) ? String(s.whatsapp) : "";
-    const clean = raw.replace(/\D/g, "");
-    return clean || "977XXXXXXXXXX";
+    await getShopSettings(); // ensures cache is populated
+    return _cachedWaNumber || "";
+}
+
+// Synchronous version — safe to call from a click handler with NO await
+// Returns "" if settings not loaded yet (preloadSettings() must have run first)
+export function getWhatsAppNumberSync() {
+    return _cachedWaNumber || "";
 }
 
 // ══════════════════════════════════════════
@@ -205,31 +215,105 @@ export async function submitLead({ phone, name = "", source = "popup", page = ""
 // ══════════════════════════════════════════
 //  WHATSAPP URL BUILDERS
 // ══════════════════════════════════════════
+
+// ── Shared message composer (pure sync, no network) ──
+function _composeOrderMessage(product, qty) {
+    const salePrice = Number(product.price) || 0;
+    const origPrice = Number(product.meta?.originalPrice) || 0;
+
+    const discountLine = (origPrice > 0 && origPrice > salePrice)
+        ? `Orig: Rs.${origPrice.toLocaleString()} → Sale: Rs.${salePrice.toLocaleString()} (${Math.round((1 - salePrice / origPrice) * 100)}% OFF)`
+        : `Rs.${salePrice.toLocaleString()}`;
+
+    // Collect image URLs (max 5)
+    const imageUrls = [];
+    if (product.mainImage) imageUrls.push(product.mainImage);
+    const imgList = Array.isArray(product.gallery) ? product.gallery
+                  : Array.isArray(product.images)  ? product.images : [];
+    for (const img of imgList) {
+        const url = typeof img === "string" ? img : img?.url;
+        if (url && url !== product.mainImage && imageUrls.length < 5) imageUrls.push(url);
+    }
+
+    // Product page link (plain, not pre-encoded — outer encodeURIComponent handles it)
+    let productLink = "";
+    try {
+        const base = window.location.href.split("#")[0].split("?")[0];
+        productLink = `${base}#product=${product.slug || product.id}`;
+    } catch (_) {}
+
+    const lines = [
+        `Hello! 🙏 I'd like to *pre-order* from *V3 Cafe*`,
+        ``,
+        `🧁 *${product.title || "Item"}*`,
+        `📂 Category: ${product.category || "Bakery"}`,
+        `💰 Price: ${discountLine}`,
+        `🔢 Qty: ${qty}`,
+        `💵 Total: Rs.${(salePrice * qty).toLocaleString()}`,
+        `🏪 Pickup: From store (I'll come to collect)`,
+    ];
+
+    if (product.note)         lines.push(`📌 Note: ${product.note}`);
+    if (product.whatsappText) lines.push(``, product.whatsappText);
+    if (productLink)          lines.push(``, `🔗 View Product & Photos:`, productLink);
+
+    if (imageUrls.length) {
+        lines.push(``, `🖼️ Photo${imageUrls.length > 1 ? "s" : ""}:`);
+        imageUrls.forEach((url, i) => lines.push(`${i + 1}. ${url}`));
+    }
+
+    lines.push(``, `ID: ${product.id || ""}`, `Thank you! 😊`);
+    return lines.join("\n");
+}
+
+/**
+ * SYNCHRONOUS — safe to call directly in a click handler.
+ * Requires settings to have been preloaded (getShopSettings called at startup).
+ * Returns the full wa.me URL string, or throws if number not configured.
+ */
+export function buildOrderUrlSync(product, qty = 1) {
+    const phone = getWhatsAppNumberSync();
+    if (!phone || phone.includes("X")) {
+        throw new Error("WhatsApp number is not set. Please configure it in Admin → Settings.");
+    }
+    const text = encodeURIComponent(_composeOrderMessage(product, qty));
+    return `https://wa.me/${phone}?text=${text}`;
+}
+
+/**
+ * ASYNC fallback — use only when sync version isn't viable.
+ * Forces a settings fetch if not yet loaded.
+ */
 export async function buildOrderUrl(product, qty = 1) {
-    const phone = await getWhatsAppNumber();
-    const waText = product.whatsappText || "";
-    return buildWhatsAppUrl({ phoneNumber: phone, product, qty, customText: waText });
+    await getShopSettings(); // ensures _cachedWaNumber is populated
+    return buildOrderUrlSync(product, qty);
 }
 
 export async function buildCustomCakeWhatsAppUrl({ name, desc, occasion, date, budget }) {
     const waNumber = await getWhatsAppNumber();
+    if (!waNumber || waNumber.includes("X")) {
+        throw new Error("WhatsApp number not configured. Please update Settings in the Admin Panel.");
+    }
     const parts = [
         "Hello! I want to request a *Custom Cake* 🎂",
-        name     ? `👤 Name: ${name}`              : null,
-        desc     ? `📝 Description: ${desc}`       : null,
-        occasion ? `🎉 Occasion: ${occasion}`      : null,
-        date     ? `📅 Delivery Date: ${date}`     : null,
-        budget   ? `💰 Budget: Rs. ${budget}`      : null,
-        "\nPlease let me know the details. Thank you!"
+        name     ? `👤 Name: ${name}`         : null,
+        desc     ? `📝 Cake Details: ${desc}` : null,
+        occasion ? `🎉 Occasion: ${occasion}` : null,
+        date     ? `📅 Needed By: ${date}`    : null,
+        budget   ? `💰 Budget: Rs.${budget}`  : null,
+        `\nPlease let me know availability and pricing. Thank you! 🙏`
     ].filter(Boolean);
-    const text = encodeURIComponent(parts.join("\n"));
-    return `https://wa.me/${waNumber}?text=${text}`;
+    return `https://wa.me/${waNumber}?text=${encodeURIComponent(parts.join("\n"))}`;
 }
 
 export function getProductShareUrl(product) {
+    // Uses #product=slug so the deep-link router can open the modal
+    // Works with: handleHashNavigation() + hashchange listener in app-main.js
     try {
         const base = window.location.href.split("#")[0].split("?")[0];
-        return buildShareLink({ baseUrl: base, product });
+        const slug = product.slug || product.id || "";
+        if (!slug) return base;
+        return `${base}#product=${encodeURIComponent(slug)}`;
     } catch (_) {
         return typeof window !== "undefined" ? window.location.href : "";
     }

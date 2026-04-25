@@ -1,9 +1,9 @@
-// app-main.js — Entry point: bootstraps all modules cleanly
+// app-main.js — Entry point: init, router, search, analytics, settings
 
 import {
     fetchAllProducts,
     getShopSettings,
-    getWhatsAppNumber,
+    getWhatsAppNumberSync,
     safeTrackPageView
 } from "./app-data.js";
 
@@ -19,8 +19,7 @@ import {
     initModalControls,
     loadMoreProducts,
     setSearchTerm,
-    wireUICallbacks,
-    showToast
+    wireUICallbacks
 } from "./app-ui.js";
 
 import {
@@ -37,167 +36,156 @@ import {
 //  BOOTSTRAP
 // ══════════════════════════════════════════
 document.addEventListener("DOMContentLoaded", async () => {
-    // ── Wire callbacks between modules BEFORE rendering ──
+    // 1. Track page view (fire-and-forget)
+    safeTrackPageView(window.location.pathname);
+
+    // 2. Wire UI callbacks (must happen before any card renders)
     wireUICallbacks({ onOrder: handleOrder, onShare: handleShare });
 
-    // ── 1. Show skeletons instantly ──
+    // 3. Init all UI interactions first (instant, no network)
+    initHeaderSearch();
+    initNavLinks();
+    initModalControls();
+    initSortSelect();
+    initAvailFilter();
+    initLeadForm();
+    initCustomCakeForm();
+    initCustomCakeButtons();
+    initBackToTop();
+    initLoadMore();
+    initScrollAnimations();
+
+    // 4. Load data (network — show skeletons while waiting)
     showSkeletons("products-grid", 8);
     showSkeletons("featured-grid", 4);
 
-    // ── 2. Init all UI controls (doesn't need data) ──
-    initModalControls();
-    initAvailFilter();
-    initSortSelect();
-    initHeaderSearch();
-    initNavLinks();
-    initCustomCakeButtons();
-    initLoadMore();
-    initBackToTop();
-    initScrollAnimations();
-    initLeadForm();
-    initCustomCakeForm();
+    const [settings, products] = await Promise.all([
+        getShopSettings(),
+        fetchAllProducts()
+    ]);
 
-    // ── 3. Track page view (fire-and-forget) ──
-    safeTrackPageView(window.location.pathname);
+    // 5. Apply shop settings to DOM
+    // getWhatsAppNumberSync() is safe here — getShopSettings() just ran above and cached it
+    applyShopSettings(settings, getWhatsAppNumberSync());
 
-    // ── 4. Load settings + products in parallel ──
-    try {
-        const [products] = await Promise.all([
-            fetchAllProducts(),
-            applyShopSettings(),
-            renderFeatured()            // runs its own fetch internally
-        ]);
+    // 6. Populate product UI
+    setProducts(products);
+    renderCategoryChips(products);
+    applyFiltersAndRender();
+    renderFeatured();
 
-        setProducts(products);
-        renderCategoryChips(products);
-        applyFiltersAndRender();
-
-    } catch (err) {
-        console.error("[main] init error:", err);
-        showToast("Failed to load menu. Please refresh the page.", "error", 6000);
-        _showLoadError("products-grid");
-    }
-
-    // ── 5. Handle deep-link hash AFTER products are ready ──
+    // 7. Handle deep link AFTER products are loaded
     handleHashNavigation();
 
-    // ── 6. Start lead popup timer (after everything is rendered) ──
+    // 8. Start lead popup timer last (after page is ready)
     initLeadPopup();
 
-    // ── 7. Cleanup on page unload ──
+    // Cleanup on unload
     window.addEventListener("beforeunload", cleanupPopup);
-    window.addEventListener("hashchange", handleHashNavigation);
+
+    // Debounced hashchange so rapid back/forward presses don’t stack modal opens
+    let _hashTimer;
+    window.addEventListener("hashchange", () => {
+        clearTimeout(_hashTimer);
+        _hashTimer = setTimeout(handleHashNavigation, 80);
+    });
 });
 
 // ══════════════════════════════════════════
-//  SHOP SETTINGS → APPLY TO UI
+//  SHOP SETTINGS → DOM
 // ══════════════════════════════════════════
-async function applyShopSettings() {
-    try {
-        const [settings, waNumber] = await Promise.all([
-            getShopSettings(),
-            getWhatsAppNumber()
-        ]);
+function applyShopSettings(settings, waNumber) {
+    const shopName = (settings && settings.shopName) ? settings.shopName : "V3 Cafe";
+    const address  = (settings && settings.address)  ? settings.address  : "";
 
-        const shopName = (settings && settings.shopName) ? settings.shopName : "V3 Cafe";
-        const address  = (settings && settings.address)  ? settings.address  : "";
+    setText("hero-shop-name",   shopName);
+    setText("footer-shop-name", shopName);
+    setText("footer-address",   address);
+    document.title = `${shopName} — Fresh Baked with Love`;
 
-        _setText("hero-shop-name",   shopName);
-        _setText("footer-shop-name", shopName);
-        _setText("footer-address",   address);
+    // Auto-update copyright year
+    const yearEl = document.getElementById("footer-year");
+    if (yearEl) yearEl.textContent = new Date().getFullYear();
 
-        // Update page <title>
-        document.title = `${shopName} — Fresh Baked with Love`;
+    // Update OG title dynamically (useful for SPAs with JS-driven meta)
+    document.querySelector("meta[property='og:title']")?.setAttribute("content", `${shopName} — Fresh Baked with Love`);
 
-        // WhatsApp CTA link
-        const waUrl = `https://wa.me/${waNumber}`;
-        const waBtn = document.getElementById("wa-header-btn");
-        if (waBtn) waBtn.href = waUrl;
+    const waHref = waNumber ? `https://wa.me/${waNumber}` : "#";
 
-        const waFooter = document.getElementById("footer-wa");
-        if (waFooter) waFooter.href = waUrl;
+    const waHeaderBtn = document.getElementById("wa-header-btn");
+    if (waHeaderBtn) waHeaderBtn.href = waHref;
 
-        // Social links
-        const fb = settings && settings.facebook;
-        const ig = settings && settings.instagram;
-        if (fb) {
-            const fbEl = document.getElementById("footer-fb");
-            if (fbEl) { fbEl.href = fb; fbEl.style.display = ""; }
-        }
-        if (ig) {
-            const igEl = document.getElementById("footer-ig");
-            if (igEl) { igEl.href = ig; igEl.style.display = ""; }
-        }
+    const waFooterBtn = document.getElementById("footer-wa");
+    if (waFooterBtn) waFooterBtn.href = waHref;
 
-    } catch (err) {
-        console.warn("[main] applyShopSettings:", err.message);
+    // Social links (only show if set)
+    if (settings && settings.facebook) {
+        const fbEl = document.getElementById("footer-fb");
+        if (fbEl) { fbEl.href = settings.facebook; fbEl.style.display = ""; }
+    }
+    if (settings && settings.instagram) {
+        const igEl = document.getElementById("footer-ig");
+        if (igEl) { igEl.href = settings.instagram; igEl.style.display = ""; }
     }
 }
 
 // ══════════════════════════════════════════
-//  HEADER SEARCH
+//  SEARCH
 // ══════════════════════════════════════════
 function initHeaderSearch() {
-    const toggleBtn  = document.getElementById("search-toggle");
-    const searchBar  = document.getElementById("header-search-bar");
-    const searchInp  = document.getElementById("main-search");
-    const clearBtn   = document.getElementById("search-clear");
-    const clearBanner= document.getElementById("clear-search-banner");
+    const toggleBtn   = document.getElementById("search-toggle");
+    const searchBar   = document.getElementById("header-search-bar");
+    const searchInput = document.getElementById("main-search");
+    const clearBtn    = document.getElementById("search-clear");
+    const clearBanner = document.getElementById("clear-search-banner");
 
-    let debounceTimer;
+    if (clearBtn) clearBtn.style.display = "none";
 
-    // Toggle search bar
+    let searchTimer;
+
     toggleBtn?.addEventListener("click", () => {
         const isOpen = searchBar?.classList.toggle("open");
         if (isOpen) {
-            setTimeout(() => searchInp?.focus(), 80);
+            setTimeout(() => searchInput?.focus(), 80);
         } else {
-            _clearSearch(searchInp, clearBtn);
+            _clearSearch(searchInput, clearBtn);
         }
     });
 
-    // Live search — 250ms debounce
-    searchInp?.addEventListener("input", e => {
-        clearTimeout(debounceTimer);
-        const term = e.target.value;
-        if (clearBtn) clearBtn.style.display = term.trim() ? "" : "none";
-        debounceTimer = setTimeout(() => {
-            setSearchTerm(term.trim());
+    searchInput?.addEventListener("input", e => {
+        clearTimeout(searchTimer);
+        const term = e.target.value.trim();
+        if (clearBtn) clearBtn.style.display = term ? "" : "none";
+        searchTimer = setTimeout(() => {
+            setSearchTerm(term);
             applyFiltersAndRender();
         }, 250);
     });
 
-    clearBtn?.addEventListener("click", () => {
-        _clearSearch(searchInp, clearBtn);
-    });
-
+    clearBtn?.addEventListener("click", () => _clearSearch(searchInput, clearBtn));
     clearBanner?.addEventListener("click", () => {
-        _clearSearch(searchInp, clearBtn);
+        _clearSearch(searchInput, clearBtn);
         searchBar?.classList.remove("open");
     });
 
-    // ESC to close search
-    searchInp?.addEventListener("keydown", e => {
+    searchInput?.addEventListener("keydown", e => {
         if (e.key === "Escape") {
-            _clearSearch(searchInp, clearBtn);
+            _clearSearch(searchInput, clearBtn);
             searchBar?.classList.remove("open");
             toggleBtn?.focus();
         }
     });
-
-    // Initially hide clear button
-    if (clearBtn) clearBtn.style.display = "none";
 }
 
-function _clearSearch(inp, clearBtn) {
-    if (inp) inp.value = "";
+function _clearSearch(input, clearBtn) {
+    if (input) input.value = "";
     if (clearBtn) clearBtn.style.display = "none";
     setSearchTerm("");
     applyFiltersAndRender();
 }
 
 // ══════════════════════════════════════════
-//  NAV + HAMBURGER
+//  NAV LINKS + HAMBURGER
 // ══════════════════════════════════════════
 function initNavLinks() {
     const hamburger  = document.getElementById("hamburger");
@@ -208,21 +196,23 @@ function initNavLinks() {
         mobileMenu?.classList.toggle("open");
     });
 
-    // Close mobile menu when any mob-link or nav-link is clicked
+    // Close mobile menu when a link is tapped
+    mobileMenu?.addEventListener("click", () => {
+        hamburger?.classList.remove("open");
+        mobileMenu.classList.remove("open");
+    });
+
+    // Smooth scroll for all data-scroll links
     document.querySelectorAll("[data-scroll]").forEach(el => {
         el.addEventListener("click", e => {
             e.preventDefault();
             const targetId = el.dataset.scroll;
             const target   = document.getElementById(targetId);
             if (!target) return;
-
-            // Close mobile menu
             hamburger?.classList.remove("open");
             mobileMenu?.classList.remove("open");
-
-            // Offset scroll by header height
             const headerH = document.getElementById("site-header")?.offsetHeight || 68;
-            const top = target.getBoundingClientRect().top + window.scrollY - headerH - 8;
+            const top = target.getBoundingClientRect().top + window.scrollY - headerH - 12;
             window.scrollTo({ top, behavior: "smooth" });
         });
     });
@@ -239,12 +229,12 @@ function initNavLinks() {
 
 function _updateNavActive() {
     const headerH = document.getElementById("site-header")?.offsetHeight || 68;
-    const scrollY = window.scrollY + headerH + 80;
-    let activeId  = "";
+    const y = window.scrollY + headerH + 60;
+    let activeId = "";
 
-    ["featured", "categories", "products"].forEach(id => {
+    ["categories", "products"].forEach(id => {
         const el = document.getElementById(id);
-        if (el && scrollY >= el.offsetTop) activeId = id;
+        if (el && y >= el.offsetTop) activeId = id;
     });
 
     document.querySelectorAll(".nav-link[data-scroll]").forEach(link => {
@@ -253,24 +243,16 @@ function _updateNavActive() {
 }
 
 // ══════════════════════════════════════════
-//  CUSTOM CAKE BUTTONS
+//  CUSTOM CAKE — multiple trigger buttons
 // ══════════════════════════════════════════
 function initCustomCakeButtons() {
-    const ids = [
-        "custom-cake-nav-btn",
-        "custom-cake-mob-btn",
-        "hero-custom-btn",
-        "cta-custom-btn"
-    ];
-    ids.forEach(id => {
-        document.getElementById(id)?.addEventListener("click", e => {
-            e.preventDefault();
-            // Close mobile menu if open
-            document.getElementById("hamburger")?.classList.remove("open");
-            document.getElementById("mobile-menu")?.classList.remove("open");
-            openCustomCakeModal();
+    ["custom-cake-nav-btn", "custom-cake-mob-btn", "hero-custom-btn", "cta-custom-btn"]
+        .forEach(id => {
+            document.getElementById(id)?.addEventListener("click", e => {
+                e.preventDefault();
+                openCustomCakeModal();
+            });
         });
-    });
 }
 
 // ══════════════════════════════════════════
@@ -279,11 +261,9 @@ function initCustomCakeButtons() {
 function initBackToTop() {
     const btn = document.getElementById("back-to-top");
     if (!btn) return;
-
     window.addEventListener("scroll", () => {
-        btn.classList.toggle("visible", window.scrollY > 500);
+        btn.classList.toggle("visible", window.scrollY > 400);
     }, { passive: true });
-
     btn.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
 }
 
@@ -293,6 +273,12 @@ function initBackToTop() {
 function initLoadMore() {
     document.getElementById("load-more-btn")?.addEventListener("click", () => {
         loadMoreProducts();
+        // Scroll slightly so new cards are visible
+        setTimeout(() => {
+            const grid = document.getElementById("products-grid");
+            const last = grid?.lastElementChild;
+            last?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 80);
     });
 }
 
@@ -301,15 +287,14 @@ function initLoadMore() {
 // ══════════════════════════════════════════
 function initScrollAnimations() {
     if (!("IntersectionObserver" in window)) return;
-
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add("in-view");
-                observer.unobserve(entry.target); // once is enough
+    const observer = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+            if (e.isIntersecting) {
+                e.target.classList.add("in-view");
+                observer.unobserve(e.target); // fire once
             }
         });
-    }, { threshold: 0.08 });
+    }, { threshold: 0.06, rootMargin: "0px 0px -40px 0px" });
 
     document.querySelectorAll(".section-wrap, .cta-section, .hero-section").forEach(el => {
         observer.observe(el);
@@ -317,44 +302,54 @@ function initScrollAnimations() {
 }
 
 // ══════════════════════════════════════════
-//  DEEP LINK / HASH NAVIGATION
+//  DEEP LINK ROUTER
+//
+//  Supported share URL formats (all open the product modal):
+//   • ?product=slug          ← from buildShareLink() / web share
+//   • ?productId=id         ← fallback from buildShareLink()
+//   • #product=slug         ← from order links + in-page nav
+//
+//  Called AFTER products are loaded, so modal opens instantly.
 // ══════════════════════════════════════════
 function handleHashNavigation() {
-    const hash = window.location.hash;
-    if (!hash) return;
+    // ── 1. Check query parameters (?product=slug or ?productId=id) ──
+    const params = new URLSearchParams(window.location.search);
+    const qSlug  = params.get("product");
+    const qId    = params.get("productId");
 
-    // #product=slug  → open product modal
-    const m = hash.match(/^#product=(.+)$/);
-    if (m) {
-        const slug = decodeURIComponent(m[1]);
-        // Small delay ensures products are rendered before trying to open modal
-        setTimeout(() => openProductModal(slug), 600);
+    if (qSlug || qId) {
+        const identifier = decodeURIComponent(qSlug || qId);
+        // Open immediately — products already loaded at this point
+        openProductModal(identifier);
+        // Clean the query param from the URL bar (keep it tidy)
+        const cleanUrl = window.location.pathname + window.location.hash;
+        history.replaceState(null, "", cleanUrl);
         return;
     }
 
-    // #section=id  → smooth scroll
-    const sm = hash.match(/^#section=(.+)$/);
-    if (sm) {
-        const el = document.getElementById(sm[1]);
-        if (el) setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 300);
+    // ── 2. Check hash (#product=slug) ──
+    const hash = window.location.hash;
+    if (!hash) return;
+
+    const productMatch = hash.match(/^#product=(.+)$/);
+    if (productMatch) {
+        const slug = decodeURIComponent(productMatch[1]);
+        openProductModal(slug); // products already loaded — no delay needed
+        return;
+    }
+
+    // ── 3. Scroll to section (#section=id) ──
+    const sectionMatch = hash.match(/^#section=(.+)$/);
+    if (sectionMatch) {
+        const el = document.getElementById(sectionMatch[1]);
+        if (el) el.scrollIntoView({ behavior: "smooth" });
     }
 }
 
 // ══════════════════════════════════════════
-//  HELPERS
+//  UTILITY
 // ══════════════════════════════════════════
-function _setText(id, text) {
+function setText(id, text) {
     const el = document.getElementById(id);
     if (el) el.textContent = text ?? "";
-}
-
-function _showLoadError(containerId) {
-    const el = document.getElementById(containerId);
-    if (!el) return;
-    el.innerHTML = `
-        <div class="empty-state" style="grid-column:1/-1">
-            <div class="empty-state-icon">⚠️</div>
-            <div class="empty-state-title">Could not load the menu</div>
-            <div class="empty-state-sub">Please check your internet connection and <a href="" onclick="location.reload()" style="color:var(--amber)">refresh the page</a>.</div>
-        </div>`;
 }

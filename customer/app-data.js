@@ -225,17 +225,6 @@ function _composeOrderMessage(product, qty) {
         ? `Orig: Rs.${origPrice.toLocaleString()} → Sale: Rs.${salePrice.toLocaleString()} (${Math.round((1 - salePrice / origPrice) * 100)}% OFF)`
         : `Rs.${salePrice.toLocaleString()}`;
 
-    // Collect image URLs (max 5)
-    const imageUrls = [];
-    if (product.mainImage) imageUrls.push(product.mainImage);
-    const imgList = Array.isArray(product.gallery) ? product.gallery
-                  : Array.isArray(product.images)  ? product.images : [];
-    for (const img of imgList) {
-        const url = typeof img === "string" ? img : img?.url;
-        if (url && url !== product.mainImage && imageUrls.length < 5) imageUrls.push(url);
-    }
-
-
     const lines = [
         `Hello! 🙏 I'd like to *pre-order* from *V3 Cafe*`,
         ``,
@@ -250,18 +239,12 @@ function _composeOrderMessage(product, qty) {
     if (product.note)         lines.push(`📌 Note: ${product.note}`);
     if (product.whatsappText) lines.push(``, product.whatsappText);
 
-    // Product page link — standalone
+    // Item link
     try {
         const base = window.location.href.split("#")[0].split("?")[0];
         const productLink = `${base}#product=${product.slug || product.id}`;
-        lines.push(``, `🔗 ${productLink}`);
+        lines.push(``, `item link:`, `🔗 ${productLink}`);
     } catch (_) {}
-
-    // Photo URLs — independently numbered, no combined header
-    if (imageUrls.length) {
-        lines.push(``);
-        imageUrls.forEach((url, i) => lines.push(`${i + 1}. ${url}`));
-    }
 
     lines.push(``, `ID: ${product.id || ""}`, `Thank you! 😊`);
     return lines.join("\n");

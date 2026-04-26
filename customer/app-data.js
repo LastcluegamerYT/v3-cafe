@@ -217,7 +217,7 @@ export async function submitLead({ phone, name = "", source = "popup", page = ""
 // ══════════════════════════════════════════
 
 // ── Shared message composer (pure sync, no network) ──
-function _composeOrderMessage(product, qty) {
+function _composeOrderMessage(product, qty, pickupTime = "") {
     const salePrice = Number(product.price) || 0;
     const origPrice = Number(product.meta?.originalPrice) || 0;
 
@@ -234,7 +234,8 @@ function _composeOrderMessage(product, qty) {
         `🔢 Qty: ${qty}`,
         `💵 Total: Rs.${(salePrice * qty).toLocaleString()}`,
         `🏪 Pickup: From store (I'll come to collect)`,
-    ];
+        pickupTime ? `📅 Pickup Time: ${pickupTime}` : null,
+    ].filter(Boolean);
 
     if (product.note)         lines.push(`📌 Note: ${product.note}`);
     if (product.whatsappText) lines.push(``, product.whatsappText);
@@ -255,12 +256,12 @@ function _composeOrderMessage(product, qty) {
  * Requires settings to have been preloaded (getShopSettings called at startup).
  * Returns the full wa.me URL string, or throws if number not configured.
  */
-export function buildOrderUrlSync(product, qty = 1) {
+export function buildOrderUrlSync(product, qty = 1, pickupTime = "") {
     const phone = getWhatsAppNumberSync();
     if (!phone || phone.includes("X")) {
         throw new Error("WhatsApp number is not set. Please configure it in Admin → Settings.");
     }
-    const text = encodeURIComponent(_composeOrderMessage(product, qty));
+    const text = encodeURIComponent(_composeOrderMessage(product, qty, pickupTime));
     return `https://wa.me/${phone}?text=${text}`;
 }
 

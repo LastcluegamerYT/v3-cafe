@@ -250,6 +250,20 @@
               <span id="qty-val" class="qty-val">1</span>
               <button class="qty-btn" id="qty-plus">+</button>
             </div>
+            <!-- Pickup Time Selector -->
+            <div class="pickup-row" id="pickup-row">
+              <span class="pickup-label">📅 Pickup Time:</span>
+              <div class="pickup-selects">
+                <select id="pickup-day" class="pickup-select" aria-label="Pickup day">
+                  <option value="today">Today</option>
+                  <option value="tomorrow">Tomorrow</option>
+                </select>
+                <select id="pickup-time" class="pickup-select" aria-label="Pickup time">
+                  <option>Loading…</option>
+                </select>
+              </div>
+              <p class="pickup-note" id="pickup-note"></p>
+            </div>
             <button class="btn-wa-order" id="pm-order-btn">
               <span>📲</span> Pre-Order via WhatsApp
             </button>

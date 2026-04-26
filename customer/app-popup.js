@@ -138,7 +138,7 @@ export function initLeadForm() {
 //   is 100% SYNCHRONOUS — no await at all — window.open()
 //   is called within the user-gesture context and NEVER blocked.
 // ══════════════════════════════════════════
-export function handleOrder(product, qty = 1) {
+export function handleOrder(product, qty = 1, pickupTime = "") {
     if (!product) return;
 
     const avail = (product.availability || "available").toLowerCase();
@@ -150,15 +150,13 @@ export function handleOrder(product, qty = 1) {
     // Build URL synchronously (settings already cached at startup)
     let url;
     try {
-        url = buildOrderUrlSync(product, qty);
+        url = buildOrderUrlSync(product, qty, pickupTime);
     } catch (err) {
         showToast(err.message || "WhatsApp not configured.", "error", 6000);
         return;
     }
 
     // Open WhatsApp — fully inside user-gesture context, never popup-blocked
-    // • Mobile   → Opens WhatsApp app
-    // • Laptop   → Opens web.whatsapp.com
     _openLink(url);
     showToast("📲 Opening WhatsApp…", "info", 2000);
 }

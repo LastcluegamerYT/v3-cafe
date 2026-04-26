@@ -590,6 +590,60 @@
   text-align: center
 }
 
+/* ══ PICKUP TIME SELECTOR ══ */
+.pickup-row {
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+  padding: .75rem;
+  background: var(--cream);
+  border: 1.5px solid var(--amber);
+  border-radius: var(--radius);
+}
+
+.pickup-label {
+  font-size: .82rem;
+  font-weight: 700;
+  color: var(--amber-dark);
+  letter-spacing: .02em
+}
+
+.pickup-selects {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .5rem
+}
+
+.pickup-select {
+  width: 100%;
+  padding: .5rem .65rem;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--text);
+  outline: none;
+  cursor: pointer;
+  transition: border-color .2s;
+  appearance: auto
+}
+
+.pickup-select:focus {
+  border-color: var(--amber)
+}
+
+.pickup-note {
+  font-size: .72rem;
+  color: var(--text3);
+  margin: 0;
+  line-height: 1.4
+}
+
+.pickup-note.warn {
+  color: #b45309
+}
+
 .btn-wa-order {
   display: flex;
   align-items: center;

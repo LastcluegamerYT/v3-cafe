@@ -35,6 +35,75 @@ let _page           = 1;
 let _currentProduct = null;
 let _modalQty       = 1;
 
+// ══════════════════════════════════════════
+//  NST PICKUP TIME HELPERS
+//  Nepal Standard Time = UTC + 5h 45m
+// ══════════════════════════════════════════
+const NST_OFFSET_MS = (5 * 60 + 45) * 60 * 1000;
+const CAFE_OPEN_MIN  = 9  * 60; // 9:00 AM
+const CAFE_CLOSE_MIN = 20 * 60; // 8:00 PM
+const PICKUP_BUFFER  = 45;      // min lead time in minutes
+
+function _nowInNST() {
+    // Shift UTC epoch by NST offset, read as UTC fields → gives NST values
+    const d = new Date(Date.now() + NST_OFFSET_MS);
+    return d.getUTCHours() * 60 + d.getUTCMinutes(); // total minutes from midnight NST
+}
+
+function _fmtSlot(totalMin) {
+    const h = Math.floor(totalMin / 60);
+    const m = totalMin % 60;
+    const ampm  = h >= 12 ? "PM" : "AM";
+    const h12   = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+    const mm    = m === 0 ? "00" : "30";
+    return `${h12}:${mm} ${ampm}`;
+}
+
+export function populatePickupSlots(day) {
+    const dayEl  = document.getElementById("pickup-day");
+    const timeEl = document.getElementById("pickup-time");
+    const noteEl = document.getElementById("pickup-note");
+    if (!timeEl) return;
+
+    const nowMin = _nowInNST();
+    const cutoff  = day === "today" ? nowMin + PICKUP_BUFFER : -1;
+
+    const slots = [];
+    for (let m = CAFE_OPEN_MIN; m < CAFE_CLOSE_MIN; m += 30) {
+        if (m > cutoff) slots.push(m);
+    }
+
+    if (!slots.length && day === "today") {
+        // No more slots for today — auto-switch to tomorrow
+        if (dayEl) dayEl.value = "tomorrow";
+        if (noteEl) {
+            noteEl.textContent = "⚠️ Cafe order time passed for today — switched to Tomorrow.";
+            noteEl.className = "pickup-note warn";
+        }
+        populatePickupSlots("tomorrow");
+        return;
+    }
+
+    timeEl.innerHTML = slots.map(m => {
+        const label = _fmtSlot(m);
+        return `<option value="${label}">${label}</option>`;
+    }).join("");
+
+    if (noteEl) {
+        noteEl.textContent = day === "today"
+            ? `🕐 Nepal Time • Slots from now +${PICKUP_BUFFER}min (9 AM–8 PM)`
+            : "🕐 Nepal Time • All slots for tomorrow (9 AM–8 PM)";
+        noteEl.className = "pickup-note";
+    }
+}
+
+function _getPickupString() {
+    const day  = document.getElementById("pickup-day")?.value  || "today";
+    const time = document.getElementById("pickup-time")?.value || "";
+    if (!time || time === "Loading…") return "";
+    return `${day === "today" ? "Today" : "Tomorrow"} at ${time} (Nepal Time)`;
+}
+
 export function setProducts(products) {
     _products = Array.isArray(products) ? products : [];
     _filtered = [..._products];
@@ -330,8 +399,8 @@ function bindCardEvents(container) {
         btn.addEventListener("click", e => {
             e.stopPropagation();
             if (btn.disabled || btn.classList.contains("disabled")) return;
-            const p = _products.find(x => x.id === btn.dataset.id);
-            if (p) { safeTrackProductClick(p.id); _onOrderClick?.(p, 1); }
+            // Open modal so customer selects pickup time before ordering
+            openProductModal(btn.dataset.id);
         });
     });
 
@@ -375,6 +444,8 @@ export async function openProductModal(id) {
     _modalQty = 1;
 
     populateProductModal(detail);
+    // Init pickup slots for today after modal is populated
+    populatePickupSlots("today");
     openModal("product-modal");
 
     // Update URL — use replaceState so the Back button returns to the previous page
@@ -564,11 +635,22 @@ export function initModalControls() {
         }
     });
 
-    // Order button in modal
+    // Order button in modal — passes pickup time to handler
     document.getElementById("pm-order-btn")?.addEventListener("click", () => {
         if (!_currentProduct) return;
+        const pickupTime = _getPickupString();
+        if (!pickupTime) {
+            // Shouldn't happen, but guard gracefully
+            showToast("Please select a pickup time.", "warning", 3000);
+            return;
+        }
         safeTrackProductClick(_currentProduct.id);
-        _onOrderClick?.(_currentProduct, _modalQty);
+        _onOrderClick?.(_currentProduct, _modalQty, pickupTime);
+    });
+
+    // Pickup day change — regenerate time slots
+    document.getElementById("pickup-day")?.addEventListener("change", e => {
+        populatePickupSlots(e.target.value);
     });
 
     // Share button

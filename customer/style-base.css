@@ -902,15 +902,15 @@ ul {
   }
 
   .section-wrap {
-    padding: 2rem 1rem
+    padding: 1.75rem .85rem
   }
 
   .hero-section {
-    min-height: 380px
+    min-height: 360px
   }
 
   .hero-content {
-    padding: 3.5rem 1rem 5rem
+    padding: 3rem .85rem 4.5rem
   }
 
   .products-section-head {
@@ -923,9 +923,16 @@ ul {
     width: 100%
   }
 
+  /* Compact 2-col grid — works on 320px phones */
   .featured-grid,
   .products-grid {
-    grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
-    gap: .75rem
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: .6rem
+  }
+
+  /* Square card images on mobile — compact, shows more items above fold */
+  .card-img,
+  .card-img-ph {
+    aspect-ratio: 1/1
   }
 }

@@ -92,7 +92,7 @@
 
 /* Card body */
 .card-body {
-  padding: .85rem
+  padding: .75rem
 }
 
 .card-cat {
@@ -105,11 +105,11 @@
 }
 
 .card-title {
-  font-size: .92rem;
+  font-size: .88rem;
   font-weight: 700;
   color: var(--text);
   line-height: 1.3;
-  margin-bottom: .5rem;
+  margin-bottom: .4rem;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -119,9 +119,9 @@
 .card-price-row {
   display: flex;
   align-items: center;
-  gap: .4rem;
+  gap: .35rem;
   flex-wrap: wrap;
-  margin-bottom: .7rem
+  margin-bottom: .55rem
 }
 
 .card-price {
@@ -417,10 +417,10 @@
 }
 
 .pm-info {
-  padding: 1.5rem;
+  padding: 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: .75rem;
+  gap: .6rem;
   overflow-y: auto
 }
 
@@ -460,7 +460,7 @@
 
 .pm-title {
   font-family: var(--font-display);
-  font-size: 1.4rem;
+  font-size: 1.25rem;
   color: var(--text);
   line-height: 1.2
 }
@@ -495,8 +495,12 @@
 
 .pm-desc {
   color: var(--text2);
-  font-size: .9rem;
-  line-height: 1.6
+  font-size: .82rem;
+  line-height: 1.55;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden
 }
 
 .pm-detail-row {
@@ -545,7 +549,7 @@
 .pm-actions {
   display: flex;
   flex-direction: column;
-  gap: .75rem;
+  gap: .6rem;
   padding-top: .5rem;
   border-top: 1px solid var(--border-light)
 }
@@ -1037,12 +1041,32 @@ select.cm-input option {
     grid-template-columns: 1fr
   }
 
+  /* Gallery shorter on mobile so modal doesn't fill entire screen */
+  .pm-main-img-wrap {
+    aspect-ratio: 16/9;
+    max-height: 220px
+  }
+
   .pm-gallery {
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    padding: .85rem
   }
 
   .pm-info {
-    padding: 1rem
+    padding: .85rem
+  }
+
+  .pm-title {
+    font-size: 1.1rem
+  }
+
+  .pm-price {
+    font-size: 1.2rem
+  }
+
+  .pm-desc {
+    font-size: .8rem;
+    -webkit-line-clamp: 5
   }
 
   .product-modal-box {
@@ -1066,10 +1090,33 @@ select.cm-input option {
 @media(max-width:480px) {
   .modal-box {
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-    max-height: 95vh
+    max-height: 96vh
   }
 
+  /* Always stack card action buttons on small phones */
   .card-actions {
     grid-template-columns: 1fr
+  }
+
+  .pm-info {
+    padding: .75rem
+  }
+
+  .pm-badges {
+    gap: .25rem
+  }
+
+  .qty-row {
+    gap: .5rem
+  }
+
+  .btn-wa-order {
+    font-size: .88rem;
+    padding: .65rem 1rem
+  }
+
+  .pickup-selects {
+    grid-template-columns: 1fr;
+    gap: .35rem
   }
 }

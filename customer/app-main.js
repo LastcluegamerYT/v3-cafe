@@ -96,19 +96,19 @@ document.addEventListener("DOMContentLoaded", async () => {
 //  FULLSCREEN (MOBILE APP EXPERIENCE)
 // ══════════════════════════════════════════
 function initFullscreen() {
-    // Only attempt fullscreen on mobile devices
-    if (window.innerWidth > 768) return;
+    // Attempt fullscreen on all devices up to 1200px (phones, tablets, small laptops)
+    if (window.innerWidth > 1200) return;
 
     const requestFullscreen = () => {
         const docElm = document.documentElement;
         if (!document.fullscreenElement && !document.webkitFullscreenElement) {
             try {
                 if (docElm.requestFullscreen) {
-                    docElm.requestFullscreen().catch(() => {});
+                    docElm.requestFullscreen().catch(() => { });
                 } else if (docElm.webkitRequestFullscreen) {
                     docElm.webkitRequestFullscreen();
                 }
-            } catch (e) {}
+            } catch (e) { }
         }
         // Remove listeners after first interaction to avoid spamming the API
         document.removeEventListener("click", requestFullscreen);
@@ -125,11 +125,11 @@ function initFullscreen() {
 // ══════════════════════════════════════════
 function applyShopSettings(settings, waNumber) {
     const shopName = (settings && settings.shopName) ? settings.shopName : "V3 Cafe";
-    const address  = (settings && settings.address)  ? settings.address  : "";
+    const address = (settings && settings.address) ? settings.address : "";
 
-    setText("hero-shop-name",   shopName);
+    setText("hero-shop-name", shopName);
     setText("footer-shop-name", shopName);
-    setText("footer-address",   address);
+    setText("footer-address", address);
     document.title = `${shopName} — Fresh Baked with Love`;
 
     // Auto-update copyright year
@@ -162,10 +162,10 @@ function applyShopSettings(settings, waNumber) {
 //  SEARCH
 // ══════════════════════════════════════════
 function initHeaderSearch() {
-    const toggleBtn   = document.getElementById("search-toggle");
-    const searchBar   = document.getElementById("header-search-bar");
+    const toggleBtn = document.getElementById("search-toggle");
+    const searchBar = document.getElementById("header-search-bar");
     const searchInput = document.getElementById("main-search");
-    const clearBtn    = document.getElementById("search-clear");
+    const clearBtn = document.getElementById("search-clear");
     const clearBanner = document.getElementById("clear-search-banner");
 
     if (clearBtn) clearBtn.style.display = "none";
@@ -217,7 +217,7 @@ function _clearSearch(input, clearBtn) {
 //  NAV LINKS + HAMBURGER
 // ══════════════════════════════════════════
 function initNavLinks() {
-    const hamburger  = document.getElementById("hamburger");
+    const hamburger = document.getElementById("hamburger");
     const mobileMenu = document.getElementById("mobile-menu");
 
     hamburger?.addEventListener("click", () => {
@@ -236,7 +236,7 @@ function initNavLinks() {
         el.addEventListener("click", e => {
             e.preventDefault();
             const targetId = el.dataset.scroll;
-            const target   = document.getElementById(targetId);
+            const target = document.getElementById(targetId);
             if (!target) return;
             hamburger?.classList.remove("open");
             mobileMenu?.classList.remove("open");
@@ -343,8 +343,8 @@ function initScrollAnimations() {
 function handleHashNavigation() {
     // ── 1. Check query parameters (?product=slug or ?productId=id) ──
     const params = new URLSearchParams(window.location.search);
-    const qSlug  = params.get("product");
-    const qId    = params.get("productId");
+    const qSlug = params.get("product");
+    const qId = params.get("productId");
 
     if (qSlug || qId) {
         const identifier = decodeURIComponent(qSlug || qId);

@@ -103,23 +103,30 @@ function initFullscreen() {
         const docElm = document.documentElement;
         
         // If already fullscreen, do nothing
-        if (document.fullscreenElement || document.webkitFullscreenElement) return;
+        if (
+            document.fullscreenElement || 
+            document.webkitFullscreenElement || 
+            document.mozFullScreenElement || 
+            document.msFullscreenElement
+        ) return;
 
         try {
             if (docElm.requestFullscreen) {
                 docElm.requestFullscreen().catch(() => { });
-            } else if (docElm.webkitRequestFullscreen) {
+            } else if (docElm.webkitRequestFullscreen) { // Safari/Chrome
                 docElm.webkitRequestFullscreen();
+            } else if (docElm.mozRequestFullScreen) { // Firefox
+                docElm.mozRequestFullScreen();
+            } else if (docElm.msRequestFullscreen) { // IE/Edge
+                docElm.msRequestFullscreen();
             }
         } catch (e) { }
     };
 
-    // Wait for a valid user interaction.
-    // We use click and touchend (touchstart is often blocked by browsers).
-    // We do NOT remove the listener, so if it fails the first time (e.g. user scrolled instead of tapped), 
-    // it will try again on the next tap until it succeeds.
+    // Attach to multiple interaction types for maximum Android compatibility
     document.addEventListener("click", requestFullscreen);
     document.addEventListener("touchend", requestFullscreen, { passive: true });
+    document.addEventListener("touchstart", requestFullscreen, { passive: true });
 }
 
 // ══════════════════════════════════════════

@@ -444,8 +444,12 @@ export async function openProductModal(id) {
     _modalQty = 1;
 
     populateProductModal(detail);
-    // Init pickup slots for today after modal is populated
-    populatePickupSlots("today");
+
+    // Reset day selector and refresh slots every time modal opens
+    const dayEl = document.getElementById("pickup-day");
+    if (dayEl) dayEl.value = "today";
+    try { populatePickupSlots("today"); } catch (_) {}
+
     openModal("product-modal");
 
     // Update URL — use replaceState so the Back button returns to the previous page
@@ -671,6 +675,10 @@ export function initModalControls() {
             // lead-popup ESC is handled in app-popup.js initLeadForm()
         }
     });
+
+    // Pre-populate slots at DOMContentLoaded (safety net for hosted/cached sites).
+    // Guarantees slots are never stuck on "Loading…" even before any modal opens.
+    try { populatePickupSlots("today"); } catch (_) {}
 }
 
 // ══════════════════════════════════════════

@@ -41,7 +41,7 @@ let _modalQty       = 1;
 // ══════════════════════════════════════════
 const NST_OFFSET_MS = (5 * 60 + 45) * 60 * 1000;
 const CAFE_OPEN_MIN  = 9  * 60; // 9:00 AM
-const CAFE_CLOSE_MIN = 20 * 60; // 8:00 PM
+const CAFE_CLOSE_MIN = 21 * 60; // 9:00 PM
 const PICKUP_BUFFER  = 45;      // min lead time in minutes
 
 function _nowInNST() {
@@ -91,8 +91,8 @@ export function populatePickupSlots(day) {
 
     if (noteEl) {
         noteEl.textContent = day === "today"
-            ? `🕐 Nepal Time • Slots from now +${PICKUP_BUFFER}min (9 AM–8 PM)`
-            : "🕐 Nepal Time • All slots for tomorrow (9 AM–8 PM)";
+            ? `🕐 Nepal Time • Slots from now +${PICKUP_BUFFER}min (9 AM–9 PM)`
+            : "🕐 Nepal Time • All slots for tomorrow (9 AM–9 PM)";
         noteEl.className = "pickup-note";
     }
 }

@@ -54,6 +54,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     initBackToTop();
     initLoadMore();
     initScrollAnimations();
+    initFullscreen();
 
     // 4. Load data (network — show skeletons while waiting)
     showSkeletons("products-grid", 8);
@@ -90,6 +91,34 @@ document.addEventListener("DOMContentLoaded", async () => {
         _hashTimer = setTimeout(handleHashNavigation, 80);
     });
 });
+
+// ══════════════════════════════════════════
+//  FULLSCREEN (MOBILE APP EXPERIENCE)
+// ══════════════════════════════════════════
+function initFullscreen() {
+    // Only attempt fullscreen on mobile devices
+    if (window.innerWidth > 768) return;
+
+    const requestFullscreen = () => {
+        const docElm = document.documentElement;
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+            try {
+                if (docElm.requestFullscreen) {
+                    docElm.requestFullscreen().catch(() => {});
+                } else if (docElm.webkitRequestFullscreen) {
+                    docElm.webkitRequestFullscreen();
+                }
+            } catch (e) {}
+        }
+        // Remove listeners after first interaction to avoid spamming the API
+        document.removeEventListener("click", requestFullscreen);
+        document.removeEventListener("touchstart", requestFullscreen);
+    };
+
+    // Wait for the first user interaction
+    document.addEventListener("click", requestFullscreen);
+    document.addEventListener("touchstart", requestFullscreen, { passive: true });
+}
 
 // ══════════════════════════════════════════
 //  SHOP SETTINGS → DOM

@@ -616,13 +616,12 @@
 .pickup-selects {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: .5rem;
-  overflow: hidden    /* prevent grid blowout on tiny screens */
+  gap: .5rem
 }
 
 .pickup-select {
   width: 100%;
-  min-width: 0;           /* critical: prevents grid cell overflow */
+  min-width: 0;           /* prevents grid cell overflow */
   padding: .45rem .55rem;
   background: var(--surface);
   border: 1.5px solid var(--border);
@@ -633,10 +632,7 @@
   outline: none;
   cursor: pointer;
   transition: border-color .2s;
-  appearance: auto;
-  text-overflow: ellipsis;
-  overflow: hidden;
-  white-space: nowrap
+  appearance: auto    /* use native OS picker on all devices */
 }
 
 .pickup-select:focus {

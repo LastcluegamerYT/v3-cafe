@@ -24,25 +24,25 @@ export function wireUICallbacks({ onOrder, onShare }) {
 // ══════════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════════
-let _products      = [];
-let _filtered      = [];
+let _products = [];
+let _filtered = [];
 let _activeCategory = "all";
-let _activeAvail    = "all";
-let _sortOrder      = "default";
-let _searchTerm     = "";
-let _pageSize       = 12;
-let _page           = 1;
+let _activeAvail = "all";
+let _sortOrder = "default";
+let _searchTerm = "";
+let _pageSize = 12;
+let _page = 1;
 let _currentProduct = null;
-let _modalQty       = 1;
+let _modalQty = 1;
 
 // ══════════════════════════════════════════
 //  NST PICKUP TIME HELPERS
 //  Nepal Standard Time = UTC + 5h 45m
 // ══════════════════════════════════════════
 const NST_OFFSET_MS = (5 * 60 + 45) * 60 * 1000;
-const CAFE_OPEN_MIN  = 9  * 60; // 9:00 AM
+const CAFE_OPEN_MIN = 9 * 60; // 9:00 AM
 const CAFE_CLOSE_MIN = 21 * 60; // 9:00 PM
-const PICKUP_BUFFER  = 45;      // min lead time in minutes
+const PICKUP_BUFFER = 45;      // min lead time in minutes
 
 function _nowInNST() {
     // Shift UTC epoch by NST offset, read as UTC fields → gives NST values
@@ -53,20 +53,20 @@ function _nowInNST() {
 function _fmtSlot(totalMin) {
     const h = Math.floor(totalMin / 60);
     const m = totalMin % 60;
-    const ampm  = h >= 12 ? "PM" : "AM";
-    const h12   = h > 12 ? h - 12 : (h === 0 ? 12 : h);
-    const mm    = m === 0 ? "00" : "30";
+    const ampm = h >= 12 ? "PM" : "AM";
+    const h12 = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+    const mm = m === 0 ? "00" : "30";
     return `${h12}:${mm} ${ampm}`;
 }
 
 export function populatePickupSlots(day) {
-    const dayEl  = document.getElementById("pickup-day");
+    const dayEl = document.getElementById("pickup-day");
     const timeEl = document.getElementById("pickup-time");
     const noteEl = document.getElementById("pickup-note");
     if (!timeEl) return;
 
     const nowMin = _nowInNST();
-    const cutoff  = day === "today" ? nowMin + PICKUP_BUFFER : -1;
+    const cutoff = day === "today" ? nowMin + PICKUP_BUFFER : -1;
 
     const slots = [];
     for (let m = CAFE_OPEN_MIN; m < CAFE_CLOSE_MIN; m += 30) {
@@ -98,7 +98,7 @@ export function populatePickupSlots(day) {
 }
 
 function _getPickupString() {
-    const day  = document.getElementById("pickup-day")?.value  || "today";
+    const day = document.getElementById("pickup-day")?.value || "today";
     const time = document.getElementById("pickup-time")?.value || "";
     if (!time || time === "Loading…") return "";
     return `${day === "today" ? "Today" : "Tomorrow"} at ${time} (Nepal Time)`;
@@ -174,8 +174,8 @@ export function showSkeletons(containerId, count = 8) {
 //  PRODUCT CARD BUILDER
 // ══════════════════════════════════════════
 function buildCardHTML(p) {
-    const origPrice   = Number(p.meta?.originalPrice) || 0;
-    const salePrice   = Number(p.price) || 0;
+    const origPrice = Number(p.meta?.originalPrice) || 0;
+    const salePrice = Number(p.price) || 0;
     const discountPct = (origPrice > 0 && origPrice > salePrice)
         ? Math.round((1 - salePrice / origPrice) * 100) : 0;
 
@@ -227,7 +227,7 @@ function buildCardHTML(p) {
 // ══════════════════════════════════════════
 export async function renderFeatured() {
     const container = document.getElementById("featured-grid");
-    const section   = document.getElementById("featured");
+    const section = document.getElementById("featured");
     if (!container) return;
     // Note: app-main already called showSkeletons("featured-grid", 4) before this,
     // so we do NOT call it again here — avoids visible re-flash.
@@ -320,10 +320,10 @@ export function applyFiltersAndRender() {
     }
 
     switch (_sortOrder) {
-        case "price-asc":  list.sort((a, b) => (a.price || 0) - (b.price || 0)); break;
+        case "price-asc": list.sort((a, b) => (a.price || 0) - (b.price || 0)); break;
         case "price-desc": list.sort((a, b) => (b.price || 0) - (a.price || 0)); break;
-        case "name-asc":   list.sort((a, b) => (a.title || "").localeCompare(b.title || "")); break;
-        case "newest":     list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)); break;
+        case "name-asc": list.sort((a, b) => (a.title || "").localeCompare(b.title || "")); break;
+        case "newest": list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)); break;
     }
 
     _filtered = list;
@@ -343,7 +343,7 @@ function _updateLabel() {
 
 function _updateSearchBanner() {
     const banner = document.getElementById("search-banner");
-    const txt    = document.getElementById("search-banner-txt");
+    const txt = document.getElementById("search-banner-txt");
     if (!banner) return;
     if (_searchTerm) {
         if (txt) txt.textContent = `Showing results for "${_searchTerm}"`;
@@ -429,7 +429,7 @@ export async function openProductModal(id) {
 
     // Firebase fallback
     if (!product) {
-        try { product = await fetchProductDetail(id); } catch (_) {}
+        try { product = await fetchProductDetail(id); } catch (_) { }
     }
 
     if (!product) {
@@ -494,7 +494,7 @@ function populateProductModal(p) {
 
     // Ingredients
     const ingWrap = document.getElementById("pm-ingredients-wrap");
-    const ingEl   = document.getElementById("pm-ingredients");
+    const ingEl = document.getElementById("pm-ingredients");
     if (p.ingredients?.length) {
         if (ingEl) ingEl.textContent = p.ingredients.join(", ");
         ingWrap?.classList.remove("hidden");
@@ -502,7 +502,7 @@ function populateProductModal(p) {
 
     // Tags
     const tagsWrap = document.getElementById("pm-tags-wrap");
-    const tagsEl   = document.getElementById("pm-tags");
+    const tagsEl = document.getElementById("pm-tags");
     if (p.tags?.length && tagsEl) {
         tagsEl.innerHTML = p.tags.map(t => `<span class="pm-tag">${esc(t)}</span>`).join("");
         tagsWrap?.classList.remove("hidden");
@@ -510,7 +510,7 @@ function populateProductModal(p) {
 
     // Note
     const noteWrap = document.getElementById("pm-note-wrap");
-    const noteTxt  = document.getElementById("pm-note-txt");
+    const noteTxt = document.getElementById("pm-note-txt");
     if (p.note && noteTxt) {
         noteTxt.textContent = p.note;
         noteWrap?.classList.remove("hidden");
@@ -531,19 +531,19 @@ function populateProductModal(p) {
             orderBtn.disabled = true;
             orderBtn.innerHTML = "❌ Out of Stock";
             orderBtn.style.background = "#9ca3af";
-            orderBtn.style.boxShadow  = "none";
+            orderBtn.style.boxShadow = "none";
         } else {
             orderBtn.disabled = false;
             orderBtn.innerHTML = `<span>📲</span> Pre-Order via WhatsApp`;
             orderBtn.style.background = "";
-            orderBtn.style.boxShadow  = "";
+            orderBtn.style.boxShadow = "";
         }
     }
 }
 
 function renderModalGallery(p) {
-    const mainImg  = document.getElementById("pm-main-img");
-    const imgPh    = document.getElementById("pm-img-placeholder");
+    const mainImg = document.getElementById("pm-main-img");
+    const imgPh = document.getElementById("pm-img-placeholder");
     const thumbsEl = document.getElementById("pm-thumbnails");
 
     const gallery = (p.gallery && p.gallery.length)
@@ -552,14 +552,14 @@ function renderModalGallery(p) {
 
     if (!gallery.length) {
         if (mainImg) mainImg.style.display = "none";
-        if (imgPh)   imgPh.style.display   = "flex";
-        if (thumbsEl) thumbsEl.innerHTML   = "";
+        if (imgPh) imgPh.style.display = "flex";
+        if (thumbsEl) thumbsEl.innerHTML = "";
         return;
     }
 
     if (mainImg) {
-        mainImg.src           = gallery[0].url;
-        mainImg.alt           = gallery[0].alt || p.title;
+        mainImg.src = gallery[0].url;
+        mainImg.alt = gallery[0].alt || p.title;
         mainImg.style.display = "block";
         mainImg.style.opacity = "1";
         mainImg.onerror = () => {

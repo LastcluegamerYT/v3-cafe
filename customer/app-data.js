@@ -247,7 +247,9 @@ function _composeOrderMessage(product, qty, pickupTime = "") {
         lines.push(``, `item link:`, `🔗 ${productLink}`);
     } catch (_) {}
 
-    lines.push(``, `ID: ${product.id || ""}`, `Thank you! 😊`);
+    // 4-digit random order ref — customer shows this at pickup for verification
+    const orderRef = String(Math.floor(1000 + Math.random() * 9000));
+    lines.push(``, `📋 Order Ref: *#${orderRef}*`, `(Please show this number when picking up)`, `Thank you! 😊`);
     return lines.join("\n");
 }
 

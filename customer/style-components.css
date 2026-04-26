@@ -594,11 +594,12 @@
 .pickup-row {
   display: flex;
   flex-direction: column;
-  gap: .4rem;
-  padding: .75rem;
+  gap: .45rem;
+  padding: .7rem .8rem;
   background: var(--cream);
   border: 1.5px solid var(--amber);
   border-radius: var(--radius);
+  margin-top: .1rem
 }
 
 .pickup-label {
@@ -611,22 +612,27 @@
 .pickup-selects {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: .5rem
+  gap: .5rem;
+  overflow: hidden    /* prevent grid blowout on tiny screens */
 }
 
 .pickup-select {
   width: 100%;
-  padding: .5rem .65rem;
+  min-width: 0;           /* critical: prevents grid cell overflow */
+  padding: .45rem .55rem;
   background: var(--surface);
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
-  font-size: .85rem;
+  font-size: .83rem;
   font-weight: 600;
   color: var(--text);
   outline: none;
   cursor: pointer;
   transition: border-color .2s;
-  appearance: auto
+  appearance: auto;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap
 }
 
 .pickup-select:focus {

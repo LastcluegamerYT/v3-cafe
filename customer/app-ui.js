@@ -35,6 +35,10 @@ let _page = 1;
 let _currentProduct = null;
 let _modalQty = 1;
 
+// Load Base64 image cache
+let _imageCache = {};
+try { _imageCache = JSON.parse(localStorage.getItem("v3_image_cache") || "{}"); } catch(e) {}
+
 // ══════════════════════════════════════════
 //  NST PICKUP TIME HELPERS
 //  Nepal Standard Time = UTC + 5h 45m
@@ -188,8 +192,11 @@ function buildCardHTML(p) {
     const isOut = avail === "out of stock";
     const safeId = esc(p.id || "");
 
-    const imgHTML = p.mainImage
-        ? `<img class="card-img" src="${esc(p.mainImage)}" alt="${esc(p.title)}" loading="lazy"
+    const imgUrl = p.mainImage || p.image;
+    const finalImgSrc = _imageCache[imgUrl] || imgUrl;
+
+    const imgHTML = finalImgSrc
+        ? `<img class="card-img" src="${esc(finalImgSrc)}" alt="${esc(p.title)}" loading="lazy"
                onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
            <div class="card-img-ph" style="display:none">🧁</div>`
         : `<div class="card-img-ph">🧁</div>`;
@@ -562,7 +569,8 @@ function renderModalGallery(p) {
     }
 
     if (mainImg) {
-        mainImg.src = gallery[0].url;
+        const imgUrl = gallery[0].url;
+        mainImg.src = _imageCache[imgUrl] || imgUrl;
         mainImg.alt = gallery[0].alt || p.title;
         mainImg.style.display = "block";
         mainImg.style.opacity = "1";

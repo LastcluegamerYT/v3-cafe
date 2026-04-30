@@ -1,14 +1,3 @@
 User-agent: *
-
-# Block ALL bots from admin panel
-Disallow: /admin/
-Disallow: /admin
-
-# Block bots from internal JS/connection files
-Disallow: /connection/
-
-# Allow everything else (customer page, assets)
 Allow: /
-Allow: /customer/
-
-Sitemap: https://your-site.netlify.app/sitemap.xml
+Sitemap: https://v3-cafe.netlify.app/sitemap.xml

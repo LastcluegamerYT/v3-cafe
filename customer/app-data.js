@@ -140,7 +140,14 @@ export async function fetchAllProducts(force = false) {
                     getAllProducts({ force: true }).then(fresh => {
                         _allProducts = fresh;
                         _loadedAt = Date.now();
-                        localStorage.setItem("v3_allProducts", JSON.stringify({ data: fresh, time: _loadedAt }));
+                        try {
+                            localStorage.setItem("v3_allProducts", JSON.stringify({ data: fresh, time: _loadedAt }));
+                        } catch (e) {
+                            if (e.name === 'QuotaExceededError') {
+                                localStorage.removeItem("v3_image_cache");
+                                localStorage.setItem("v3_allProducts", JSON.stringify({ data: fresh, time: _loadedAt }));
+                            }
+                        }
                         // Optional: trigger UI refresh if needed, but background cache is usually enough
                         window.dispatchEvent(new CustomEvent("v3-products-updated", { detail: fresh }));
                     }).catch(() => {});
@@ -155,7 +162,14 @@ export async function fetchAllProducts(force = false) {
     try {
         _allProducts = await getAllProducts({ force: true });
         _loadedAt    = Date.now();
-        localStorage.setItem("v3_allProducts", JSON.stringify({ data: _allProducts, time: _loadedAt }));
+        try {
+            localStorage.setItem("v3_allProducts", JSON.stringify({ data: _allProducts, time: _loadedAt }));
+        } catch (e) {
+            if (e.name === 'QuotaExceededError') {
+                localStorage.removeItem("v3_image_cache"); // Free up space!
+                try { localStorage.setItem("v3_allProducts", JSON.stringify({ data: _allProducts, time: _loadedAt })); } catch(err){}
+            }
+        }
         return _allProducts;
     } catch (err) {
         console.error("[data] fetchAllProducts:", err);

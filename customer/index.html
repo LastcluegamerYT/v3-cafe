@@ -3,27 +3,84 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>V3 Cafe — Fresh Baked with Love</title>
-  <meta name="description"
-    content="V3 Cafe — Order fresh cakes, pastries & custom bakery items. Browse our menu and order via WhatsApp." />
-  <!-- Open Graph (WhatsApp / Facebook share preview) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+  <!-- ══ Primary SEO ══ -->
+  <title>V3 Cafe Menu — Order Fresh Cakes, Cupcakes & Custom Bakery Items Online | Nepal</title>
+  <meta name="description" content="Browse V3 Cafe's full menu: custom cakes, cupcakes, pastries, birthday cakes & more. Order fresh bakery items instantly via WhatsApp. Fast delivery in Nepal." />
+  <meta name="keywords" content="V3 Cafe menu, order cake online jaleshwar, cafe in nepal, custom birthday cake Nepal, cupcakes Nepal, pastry shop Nepal, bakery menu Nepal, WhatsApp cake order Nepal, online cake delivery, fresh bakery Nepal, custom cake design Nepal, cake shop near me Nepal, V3 Cafe order, dessert Nepal, cafe menu Nepal, baked goods Nepal" />
+  <meta name="author" content="V3 Cafe" />
+  <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#b45309" />
+  <link rel="canonical" href="https://v3-cafe.netlify.app/customer/" />
+
+  <!-- ══ Open Graph (Facebook, WhatsApp share preview) ══ -->
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="V3 Cafe — Fresh Baked with Love" />
-  <meta property="og:description"
-    content="Browse fresh cakes, pastries and custom orders from V3 Cafe. Order via WhatsApp!" />
-  <meta property="og:image" content="../cafe_icon.jpg" />
-  <meta property="og:image:alt" content="V3 Cafe Logo" />
-  <!-- Twitter card -->
-  <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="V3 Cafe — Fresh Baked with Love" />
-  <meta name="twitter:description" content="Fresh cakes, pastries and custom orders from V3 Cafe." />
-  <meta name="twitter:image" content="../cafe_icon.jpg" />
-  <!-- Favicon -->
+  <meta property="og:site_name" content="V3 Cafe" />
+  <meta property="og:title" content="V3 Cafe — Fresh Cakes, Cupcakes & Custom Bakery Menu" />
+  <meta property="og:description" content="Browse our full menu. Custom cakes, cupcakes, pastries & more — all fresh baked with love. Order instantly via WhatsApp!" />
+  <meta property="og:image" content="https://v3-cafe.netlify.app/cafe_icon.jpg" />
+  <meta property="og:image:width" content="512" />
+  <meta property="og:image:height" content="512" />
+  <meta property="og:image:alt" content="V3 Cafe Bakery Menu" />
+  <meta property="og:url" content="https://v3-cafe.netlify.app/customer/" />
+  <meta property="og:locale" content="en_NP" />
+
+  <!-- ══ Twitter Card ══ -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="V3 Cafe — Order Fresh Cakes & Bakery Online" />
+  <meta name="twitter:description" content="Custom cakes, cupcakes, pastries. Fresh baked. WhatsApp ordering. Nepal." />
+  <meta name="twitter:image" content="https://v3-cafe.netlify.app/cafe_icon.jpg" />
+
+  <!-- ══ Favicon & App Icons ══ -->
   <link rel="icon" type="image/jpeg" href="../cafe_icon.jpg" />
   <link rel="apple-touch-icon" href="../cafe_icon.jpg" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="V3 Cafe" />
+  <meta name="mobile-web-app-capable" content="yes" />
+
+  <!-- ══ JSON-LD Structured Data (Google Rich Results) ══ -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Bakery",
+    "name": "V3 Cafe",
+    "description": "Fresh custom cakes, cupcakes, pastries and bakery items. Order online via WhatsApp.",
+    "url": "https://v3-cafe.netlify.app/",
+    "image": "https://v3-cafe.netlify.app/cafe_icon.jpg",
+    "servesCuisine": ["Bakery", "Desserts", "Custom Cakes", "Pastries"],
+    "priceRange": "$$",
+    "hasMenu": {
+      "@type": "Menu",
+      "name": "V3 Cafe Bakery Menu",
+      "url": "https://v3-cafe.netlify.app/customer/",
+      "description": "Fresh baked cakes, cupcakes, pastries and custom orders."
+    },
+    "address": {
+      "@type": "PostalAddress",
+      "addressCountry": "NP"
+    },
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "contactType": "customer service",
+      "contactOption": "WhatsApp",
+      "availableLanguage": ["English", "Nepali"]
+    }
+  }
+  </script>
+
+  <!-- ══ Performance: DNS Prefetch & Preconnect ══ -->
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+  <link rel="dns-prefetch" href="https://www.gstatic.com" />
+  <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Preload critical logo image -->
+  <link rel="preload" as="image" href="../cafe_icon.jpg" />
+
   <link
     href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;800&display=swap"
     rel="stylesheet" />

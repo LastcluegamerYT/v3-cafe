@@ -79,7 +79,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     handleHashNavigation();
 
     // 8. Start lead popup timer last (after page is ready)
-    initLeadPopup();
+    // initLeadPopup(); // PAUSED per user request
 
     // Cleanup on unload
     window.addEventListener("beforeunload", cleanupPopup);
@@ -89,6 +89,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.addEventListener("hashchange", () => {
         clearTimeout(_hashTimer);
         _hashTimer = setTimeout(handleHashNavigation, 80);
+    });
+
+    // Background Reactivity (Stale-While-Revalidate Auto-Update)
+    // If app-data.js detects new products/prices in the background, update UI instantly!
+    window.addEventListener("v3-products-updated", (e) => {
+        const freshProducts = e.detail;
+        setProducts(freshProducts);
+        renderCategoryChips(freshProducts);
+        applyFiltersAndRender();
+        renderFeatured();
     });
 });
 

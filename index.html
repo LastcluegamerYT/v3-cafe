@@ -123,8 +123,48 @@
     <div class="bar-wrap"><div class="bar" id="progress-bar"></div></div>
   </div>
 
-  <script>
-    // Animate progress bar then redirect
+  <script type="module">
+    import { db, getAllProducts } from "./connection/connection.js";
+    import { ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    // ── BACKGROUND PREFETCHING ──
+    // While the 2-second splash screen runs, we aggressively fetch all data
+    // and cache it so the main app loads with ZERO delay.
+    async function prefetchData() {
+      try {
+        // 1. Fetch & Cache Settings
+        get(ref(db, "settings/shop")).then(snap => {
+          if (snap.exists()) {
+            localStorage.setItem("v3_shopSettings", JSON.stringify(snap.val()));
+          }
+        }).catch(() => {});
+
+        // 2. Fetch & Cache Products
+        const products = await getAllProducts({ force: true });
+        if (products && products.length > 0) {
+          localStorage.setItem("v3_allProducts", JSON.stringify({
+            data: products,
+            time: Date.now()
+          }));
+
+          // 3. Pre-download all main images into browser HTTP cache
+          // This ensures images appear instantly without network requests
+          products.forEach(p => {
+            if (p.image) {
+              const img = new Image();
+              img.src = p.image;
+            }
+          });
+        }
+      } catch (e) {
+        console.warn("Prefetch skipped (will load normally):", e);
+      }
+    }
+
+    // Start prefetch immediately
+    prefetchData();
+
+    // ── SPLASH SCREEN ANIMATION & REDIRECT ──
     const bar = document.getElementById('progress-bar');
     let pct = 0;
     const iv = setInterval(() => {
@@ -136,7 +176,7 @@
       }
     }, 40); // 40ms × 50 steps = 2 seconds
 
-    // Manual click also cancels the timer
+    // Manual click cancels timer and redirects instantly
     document.getElementById('enter-btn').addEventListener('click', () => clearInterval(iv));
   </script>
 </body>

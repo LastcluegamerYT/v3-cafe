@@ -59,12 +59,36 @@ let _cachedWaNumber  = ""; // sync-accessible after preload
 
 export async function getShopSettings() {
     if (_settingsFetched) return _shopSettings || {};
+    
+    // 1. Try to load from localStorage first (Instant Load)
+    const cachedStr = localStorage.getItem("v3_shopSettings");
+    if (cachedStr) {
+        try {
+            _shopSettings = JSON.parse(cachedStr);
+            _cachedWaNumber = ((_shopSettings && _shopSettings.whatsapp)
+                ? String(_shopSettings.whatsapp) : "").replace(/\D/g, "");
+            _settingsFetched = true;
+            
+            // 2. Silently fetch from Firebase in background to keep cache fresh for next visit
+            get(ref(db, "settings/shop")).then(snap => {
+                if (snap.exists()) {
+                    localStorage.setItem("v3_shopSettings", JSON.stringify(snap.val()));
+                }
+            }).catch(() => {});
+            
+            return _shopSettings;
+        } catch(e) {}
+    }
+
+    // 3. Fallback: Fetch directly if no cache exists
     try {
         const snap = await get(ref(db, "settings/shop"));
         _shopSettings = snap.exists() ? snap.val() : {};
+        localStorage.setItem("v3_shopSettings", JSON.stringify(_shopSettings));
     } catch (_) {
         _shopSettings = {};
     }
+    
     // Cache WA number for sync access
     _cachedWaNumber = ((_shopSettings && _shopSettings.whatsapp)
         ? String(_shopSettings.whatsapp) : "").replace(/\D/g, "");
@@ -98,11 +122,40 @@ let _loadedAt       = 0;
 const PRODUCT_TTL   = 60_000; // 60s
 
 export async function fetchAllProducts(force = false) {
+    // 1. Check in-memory cache
     const stale = !_allProducts || (Date.now() - _loadedAt) > PRODUCT_TTL;
     if (!force && !stale) return _allProducts;
+
+    // 2. Check localStorage (Instant Load)
+    if (!_allProducts) {
+        const cachedStr = localStorage.getItem("v3_allProducts");
+        if (cachedStr) {
+            try {
+                const parsed = JSON.parse(cachedStr);
+                _allProducts = parsed.data;
+                _loadedAt = parsed.time || Date.now();
+                
+                // 3. Silently fetch in background if stale, to update cache for next time
+                if (Date.now() - parsed.time > PRODUCT_TTL || force) {
+                    getAllProducts({ force: true }).then(fresh => {
+                        _allProducts = fresh;
+                        _loadedAt = Date.now();
+                        localStorage.setItem("v3_allProducts", JSON.stringify({ data: fresh, time: _loadedAt }));
+                        // Optional: trigger UI refresh if needed, but background cache is usually enough
+                        window.dispatchEvent(new CustomEvent("v3-products-updated", { detail: fresh }));
+                    }).catch(() => {});
+                }
+                
+                return _allProducts;
+            } catch (e) {}
+        }
+    }
+
+    // 4. Fallback: Fetch directly from Firebase if no local cache exists
     try {
         _allProducts = await getAllProducts({ force: true });
         _loadedAt    = Date.now();
+        localStorage.setItem("v3_allProducts", JSON.stringify({ data: _allProducts, time: _loadedAt }));
         return _allProducts;
     } catch (err) {
         console.error("[data] fetchAllProducts:", err);

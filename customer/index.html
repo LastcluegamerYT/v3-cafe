@@ -8,8 +8,10 @@
 
   <!-- ══ Primary SEO ══ -->
   <title>V3 Cafe Menu — Order Fresh Cakes, Cupcakes & Custom Bakery Items Online | Nepal</title>
-  <meta name="description" content="Browse V3 Cafe's full menu: custom cakes, cupcakes, pastries, birthday cakes & more. Order fresh bakery items instantly via WhatsApp. Fast delivery in Nepal." />
-  <meta name="keywords" content="V3 Cafe menu, order cake online jaleshwar, cafe in nepal, custom birthday cake Nepal, cupcakes Nepal, pastry shop Nepal, bakery menu Nepal, WhatsApp cake order Nepal, online cake delivery, fresh bakery Nepal, custom cake design Nepal, cake shop near me Nepal, V3 Cafe order, dessert Nepal, cafe menu Nepal, baked goods Nepal" />
+  <meta name="description"
+    content="Browse V3 Cafe's full menu: custom cakes, cupcakes, pastries, birthday cakes & more. Order fresh bakery items instantly via WhatsApp. Fast delivery in Nepal." />
+  <meta name="keywords"
+    content="V3 Cafe menu, order cake online jaleshwar, cafe in nepal, custom birthday cake Nepal, cupcakes Nepal, pastry shop Nepal, bakery menu Nepal, WhatsApp cake order Nepal, online cake delivery, fresh bakery Nepal, custom cake design Nepal, cake shop near me Nepal, V3 Cafe order, dessert Nepal, cafe menu Nepal, baked goods Nepal" />
   <meta name="author" content="V3 Cafe" />
   <meta name="robots" content="index, follow" />
   <meta name="theme-color" content="#b45309" />
@@ -19,7 +21,8 @@
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="V3 Cafe" />
   <meta property="og:title" content="V3 Cafe — Fresh Cakes, Cupcakes & Custom Bakery Menu" />
-  <meta property="og:description" content="Browse our full menu. Custom cakes, cupcakes, pastries & more — all fresh baked with love. Order instantly via WhatsApp!" />
+  <meta property="og:description"
+    content="Browse our full menu. Custom cakes, cupcakes, pastries & more — all fresh baked with love. Order instantly via WhatsApp!" />
   <meta property="og:image" content="https://v3-cafe.netlify.app/cafe_icon.jpg" />
   <meta property="og:image:width" content="512" />
   <meta property="og:image:height" content="512" />
@@ -288,6 +291,7 @@
             <span id="pm-off" class="pm-off hidden"></span>
           </div>
           <p id="pm-desc" class="pm-desc"></p>
+          <button id="pm-show-more" class="pm-show-more" style="display:none">...show more</button>
           <div id="pm-ingredients-wrap" class="pm-detail-row hidden">
             <span class="pm-detail-label">🥚 Ingredients:</span>
             <span id="pm-ingredients" class="pm-detail-val"></span>
@@ -420,6 +424,66 @@
 
   <!-- Back to Top -->
   <button id="back-to-top" class="back-to-top hidden" aria-label="Back to top">↑</button>
+
+  <!-- ══ MOBILE PRODUCT DETAIL PAGE (SPA — no reload) ══ -->
+  <div id="product-page" style="display:none;position:fixed;inset:0;z-index:500;background:#0f0f0f;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;">
+    <!-- Top Bar -->
+    <div style="position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;background:#1a1a1a;border-bottom:1px solid rgba(255,255,255,.08);">
+      <button id="pp-back" style="background:none;border:none;color:#f5f5f5;font-size:1.5rem;cursor:pointer;padding:4px;line-height:1;" aria-label="Back">←</button>
+      <span id="pp-title" style="flex:1;font-weight:700;font-size:.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#f5f5f5;"></span>
+      <button id="pp-share" style="background:none;border:none;color:#a3a3a3;font-size:1.1rem;cursor:pointer;padding:4px;" aria-label="Share">🔗</button>
+    </div>
+    <!-- Gallery -->
+    <div style="position:relative;background:#1a1a1a;overflow:hidden;" id="pp-gallery-wrap">
+      <div id="pp-gallery-track" style="display:flex;transition:transform .3s cubic-bezier(.4,0,.2,1);"></div>
+      <div id="pp-gallery-dots" style="display:none;position:absolute;bottom:.75rem;left:50%;transform:translateX(-50%);display:flex;gap:.4rem;"></div>
+      <div id="pp-avail-badge" style="position:absolute;top:.75rem;left:.75rem;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);padding:.3rem .65rem;border-radius:20px;font-size:.72rem;font-weight:600;display:none;"></div>
+    </div>
+    <!-- Content -->
+    <div style="padding:1rem;display:flex;flex-direction:column;gap:.85rem;">
+      <div>
+        <div id="pp-cat" style="font-size:.72rem;color:#b45309;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;"></div>
+        <div id="pp-name" style="font-size:1.35rem;font-weight:800;line-height:1.25;color:#f5f5f5;"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">
+        <span id="pp-price" style="font-size:1.5rem;font-weight:800;color:#b45309;"></span>
+        <span id="pp-mrp" style="font-size:.9rem;color:#a3a3a3;text-decoration:line-through;display:none;"></span>
+        <span id="pp-off" style="font-size:.78rem;font-weight:700;color:#22c55e;background:rgba(34,197,94,.12);padding:2px 7px;border-radius:20px;display:none;"></span>
+      </div>
+      <div id="pp-desc-wrap" style="display:none;">
+        <div style="font-size:.72rem;color:#a3a3a3;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.35rem;">Description</div>
+        <p id="pp-desc" style="font-size:.9rem;line-height:1.6;color:#a3a3a3;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;"></p>
+        <button id="pp-show-more" style="display:none;background:none;border:none;color:#b45309;font-size:.8rem;font-weight:600;cursor:pointer;margin-top:2px;padding:0;">...show more</button>
+      </div>
+      <div id="pp-ing-wrap" style="display:none;">
+        <div style="font-size:.72rem;color:#a3a3a3;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem;">🥚 Ingredients</div>
+        <div id="pp-ings" style="display:flex;flex-wrap:wrap;gap:.4rem;"></div>
+      </div>
+      <div id="pp-tags-wrap" style="display:none;">
+        <div style="font-size:.72rem;color:#a3a3a3;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem;">🏷️ Tags</div>
+        <div id="pp-tags" style="display:flex;flex-wrap:wrap;gap:.4rem;"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:.75rem;">
+        <span style="font-size:.8rem;color:#a3a3a3;font-weight:600;">Qty:</span>
+        <div style="display:flex;align-items:center;background:#242424;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,.08);">
+          <button id="pp-qty-minus" style="background:none;border:none;color:#f5f5f5;font-size:1.1rem;padding:.4rem .7rem;cursor:pointer;">−</button>
+          <span id="pp-qty-val" style="font-size:.95rem;font-weight:700;min-width:2rem;text-align:center;color:#f5f5f5;">1</span>
+          <button id="pp-qty-plus" style="background:none;border:none;color:#f5f5f5;font-size:1.1rem;padding:.4rem .7rem;cursor:pointer;">+</button>
+        </div>
+      </div>
+      <div id="pp-note" style="display:none;background:rgba(180,83,9,.08);border:1px solid rgba(180,83,9,.25);border-radius:14px;padding:.75rem 1rem;font-size:.83rem;color:#a3a3a3;"></div>
+    </div>
+    <!-- Order Bar -->
+    <div style="position:sticky;bottom:0;background:#1a1a1a;border-top:1px solid rgba(255,255,255,.08);padding:.75rem 1rem;padding-bottom:calc(.75rem + env(safe-area-inset-bottom));display:flex;gap:.6rem;">
+      <button id="pp-share-bar" style="background:#242424;border:1px solid rgba(255,255,255,.08);border-radius:14px;color:#f5f5f5;font-size:1.1rem;padding:.85rem .9rem;cursor:pointer;" aria-label="Share">🔗</button>
+      <button id="pp-order-btn" style="flex:1;background:linear-gradient(135deg,#22c55e,#16a34a);border:none;border-radius:14px;color:#fff;font-family:inherit;font-size:.95rem;font-weight:700;padding:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.4rem;">📲 Order on WhatsApp</button>
+    </div>
+    <!-- Recommendations -->
+    <div id="pp-rec-section" style="padding:0 1rem 5rem;display:none;">
+      <div style="font-size:.8rem;font-weight:700;color:#a3a3a3;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;">You might also like</div>
+      <div id="pp-rec-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;"></div>
+    </div>
+  </div>
 
   <!-- Scripts -->
   <script type="module" src="app-main.js?v=2"></script>

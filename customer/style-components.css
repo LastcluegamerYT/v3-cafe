@@ -7,18 +7,24 @@
   border-radius: var(--radius);
   overflow: hidden;
   cursor: pointer;
-  transition: transform .25s, box-shadow .25s, border-color .25s;
+  transition: transform .2s, box-shadow .2s, border-color .2s;
   position: relative;
+  -webkit-tap-highlight-color: transparent;
+  contain: content;
+  will-change: transform;
 }
 
-.prod-card:hover {
-  transform: translateY(-5px);
-  box-shadow: var(--shadow-lg);
-  border-color: var(--amber);
+@media (hover: hover) {
+  .prod-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--amber);
+  }
 }
 
 .prod-card:active {
-  transform: translateY(-2px)
+  transform: scale(.97);
+  transition: transform .08s;
 }
 
 /* Card image */
@@ -31,13 +37,17 @@
 .card-img {
   width: 100%;
   aspect-ratio: 4/3;
-  object-fit: cover;
-  transition: transform .4s ease;
+  object-fit: contain;
+  background: var(--border-light);
+  transition: transform .3s ease;
   display: block;
+  will-change: transform;
 }
 
-.prod-card:hover .card-img {
-  transform: scale(1.07)
+@media (hover: hover) {
+  .prod-card:hover .card-img {
+    transform: scale(1.06);
+  }
 }
 
 .card-img-ph {
@@ -159,9 +169,11 @@
   font-size: .75rem;
   font-weight: 600;
   text-align: center;
-  transition: all .15s;
+  transition: background .1s, color .1s;
   cursor: pointer;
   border: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .btn-view:hover {
@@ -177,9 +189,11 @@
   font-size: .75rem;
   font-weight: 700;
   text-align: center;
-  transition: background .15s;
+  transition: background .1s;
   cursor: pointer;
   border: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .btn-order:hover {
@@ -289,7 +303,9 @@
   align-items: center;
   justify-content: center;
   padding: 1rem;
-  animation: fadeIn .25s ease;
+  animation: fadeIn .2s ease;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 @keyframes fadeIn {
@@ -380,8 +396,9 @@
 .pm-main-img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  transition: opacity .18s ease
+  object-fit: contain;
+  background: var(--border-light);
+  transition: opacity .15s ease;
 }
 
 .pm-img-ph {
@@ -498,9 +515,29 @@
   font-size: .82rem;
   line-height: 1.55;
   display: -webkit-box;
-  -webkit-line-clamp: 4;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
-  overflow: hidden
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.pm-desc.expanded {
+  display: block;
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+
+.pm-show-more {
+  background: none;
+  border: none;
+  color: var(--accent, #b45309);
+  font-size: .78rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 0;
+  margin-top: 2px;
+  display: inline-block;
+  letter-spacing: .01em;
 }
 
 .pm-detail-row {
@@ -621,7 +658,8 @@
 
 .pickup-select {
   width: 100%;
-  min-width: 0;           /* prevents grid cell overflow */
+  min-width: 0;
+  /* prevents grid cell overflow */
   padding: .45rem .55rem;
   background: var(--surface);
   border: 1.5px solid var(--border);
@@ -632,7 +670,8 @@
   outline: none;
   cursor: pointer;
   transition: border-color .2s;
-  appearance: auto    /* use native OS picker on all devices */
+  appearance: auto
+    /* use native OS picker on all devices */
 }
 
 .pickup-select:focus {

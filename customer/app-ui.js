@@ -773,15 +773,48 @@ function openFullscreenViewer(gallery, startIdx = 0, title = "") {
         if (e.key === "ArrowLeft"  && gallery.length > 1) showImage((currentIdx - 1 + gallery.length) % gallery.length);
     }, sig);
 
-    // Swipe left/right on mobile
+    // Touch gestures: Swipe left/right and Pinch-to-Zoom
     let _touchStartX = 0;
-    viewer.addEventListener("touchstart", (e) => { _touchStartX = e.changedTouches[0].clientX; }, { passive: true, signal: ac.signal });
+    let _baseDist = 0;
+    let _scale = 1;
+
+    viewer.addEventListener("touchstart", (e) => { 
+        if (e.touches.length === 2) {
+            _baseDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+            if (fsMainImgEl) fsMainImgEl.style.transition = "none";
+        } else if (e.touches.length === 1) {
+            _touchStartX = e.touches[0].clientX; 
+        }
+    }, { passive: true, signal: ac.signal });
+
+    viewer.addEventListener("touchmove", (e) => {
+        if (e.touches.length === 2 && _baseDist > 0) {
+            if (e.cancelable) e.preventDefault(); // Prevent browser zooming/scrolling
+            const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+            _scale = Math.max(1, Math.min(4, dist / _baseDist)); // Max 4x zoom
+            if (fsMainImgEl) fsMainImgEl.style.transform = `scale(${_scale})`;
+        }
+    }, { passive: false, signal: ac.signal }); // MUST be passive: false to allow preventDefault()
+
     viewer.addEventListener("touchend", (e) => {
-        const dx = e.changedTouches[0].clientX - _touchStartX;
-        if (Math.abs(dx) > 50 && gallery.length > 1) {
-            showImage(dx < 0
-                ? (currentIdx + 1) % gallery.length
-                : (currentIdx - 1 + gallery.length) % gallery.length);
+        if (e.touches.length < 2 && _scale > 1) {
+            // Reset zoom when pinch ends
+            _baseDist = 0;
+            _scale = 1;
+            if (fsMainImgEl) {
+                fsMainImgEl.style.transition = "transform 0.25s cubic-bezier(0.25, 1, 0.5, 1)";
+                fsMainImgEl.style.transform = "scale(1)";
+            }
+        }
+        
+        // Only trigger swipe if we are NOT zooming
+        if (e.changedTouches.length === 1 && _scale === 1) {
+            const dx = e.changedTouches[0].clientX - _touchStartX;
+            if (Math.abs(dx) > 50 && gallery.length > 1) {
+                showImage(dx < 0
+                    ? (currentIdx + 1) % gallery.length
+                    : (currentIdx - 1 + gallery.length) % gallery.length);
+            }
         }
     }, { passive: true, signal: ac.signal });
 }

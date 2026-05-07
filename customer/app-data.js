@@ -145,7 +145,7 @@ export async function fetchAllProducts(force = false) {
                         } catch (e) {
                             if (e.name === 'QuotaExceededError') {
                                 localStorage.removeItem("v3_image_cache");
-                                localStorage.setItem("v3_allProducts", JSON.stringify({ data: fresh, time: _loadedAt }));
+                                try { localStorage.setItem("v3_allProducts", JSON.stringify({ data: fresh, time: _loadedAt })); } catch (e2) {}
                             }
                         }
                         // Optional: trigger UI refresh if needed, but background cache is usually enough

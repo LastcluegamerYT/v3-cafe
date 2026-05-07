@@ -364,7 +364,7 @@
           } catch (e) {
             if (e.name === 'QuotaExceededError') {
               localStorage.removeItem("v3_image_cache");
-              localStorage.setItem("v3_allProducts", JSON.stringify({ data: products, time: Date.now() }));
+              try { localStorage.setItem("v3_allProducts", JSON.stringify({ data: products, time: Date.now() })); } catch (e2) {}
             }
           }
 

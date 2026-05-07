@@ -19,16 +19,7 @@ body {
   background: var(--bg);
   color: var(--text);
   overflow-x: hidden;
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  overscroll-behavior-y: none;
-  text-rendering: optimizeSpeed;
-}
-
-button, a, [role="button"] {
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
+  line-height: 1.6
 }
 
 img {

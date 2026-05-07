@@ -152,6 +152,18 @@ export async function fetchAllProducts(force = false) {
     }
 }
 
+export function updateLocalProductsCache(freshProducts) {
+    _allProducts = freshProducts;
+    try {
+        localStorage.setItem("v3_allProducts", JSON.stringify({ data: freshProducts, time: Date.now() }));
+    } catch (e) {
+        if (e.name === 'QuotaExceededError') {
+            localStorage.removeItem("v3_image_cache");
+            try { localStorage.setItem("v3_allProducts", JSON.stringify({ data: freshProducts, time: Date.now() })); } catch(err){}
+        }
+    }
+}
+
 export async function fetchFeatured(limit = 6) {
     try {
         const all = await fetchAllProducts();

@@ -274,38 +274,60 @@
      MODALS
 ════════════════════════════════════ -->
 
-  <!-- Product Detail Modal -->
+  <!-- Product Detail Modal — Full-Screen Redesign -->
   <div id="product-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="pm-title">
     <div class="modal-box product-modal-box">
-      <button class="modal-close" id="product-modal-close" aria-label="Close">✕</button>
-      <div class="product-modal-inner">
-        <!-- Gallery -->
-        <div class="pm-gallery">
+
+      <!-- ── TOP BAR ── -->
+      <div class="pm-topbar">
+        <button class="pm-back-btn" id="product-modal-close" aria-label="Go back">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+        </button>
+        <span class="pm-topbar-title">Product Details</span>
+        <button id="pm-fs-btn" class="pm-fs-btn" aria-label="View Fullscreen" title="View Fullscreen">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- ── SCROLLABLE BODY ── -->
+      <div class="pm-scroll-body">
+
+        <!-- Image Hero -->
+        <div class="pm-img-hero">
           <div class="pm-main-img-wrap">
             <img id="pm-main-img" src="" alt="" class="pm-main-img" />
             <div id="pm-img-placeholder" class="pm-img-ph">🧁</div>
-            <button id="pm-fs-btn" class="pm-fs-btn" aria-label="View Fullscreen" title="View Fullscreen">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
-              </svg>
-            </button>
           </div>
+          <!-- Thumbnail strip -->
           <div id="pm-thumbnails" class="pm-thumbnails"></div>
         </div>
-        <!-- Info -->
+
+        <!-- Info Block -->
         <div class="pm-info">
+
+          <!-- Badges -->
           <div class="pm-badges">
             <span id="pm-avail-badge" class="pm-avail-badge"></span>
             <span id="pm-category-badge" class="pm-cat-badge"></span>
           </div>
+
+          <!-- Title + Price -->
           <h2 id="pm-title" class="pm-title"></h2>
           <div class="pm-price-row">
             <span id="pm-price" class="pm-price"></span>
             <span id="pm-mrp" class="pm-mrp hidden"></span>
             <span id="pm-off" class="pm-off hidden"></span>
           </div>
+
+          <!-- Description -->
           <p id="pm-desc" class="pm-desc"></p>
           <button id="pm-show-more" class="pm-show-more" style="display:none">...show more</button>
+
+          <!-- Details -->
           <div id="pm-ingredients-wrap" class="pm-detail-row hidden">
             <span class="pm-detail-label">🥚 Ingredients:</span>
             <span id="pm-ingredients" class="pm-detail-val"></span>
@@ -317,7 +339,8 @@
           <div id="pm-note-wrap" class="pm-note hidden">
             <span>📌</span> <span id="pm-note-txt"></span>
           </div>
-          <!-- Order Actions -->
+
+          <!-- Qty + Pickup (inside scroll body) -->
           <div class="pm-actions">
             <div class="qty-row">
               <label class="qty-label">Qty:</label>
@@ -325,7 +348,6 @@
               <span id="qty-val" class="qty-val">1</span>
               <button class="qty-btn" id="qty-plus">+</button>
             </div>
-            <!-- Pickup Time Selector -->
             <div class="pickup-row" id="pickup-row">
               <span class="pickup-label">📅 Pickup Time:</span>
               <div class="pickup-selects">
@@ -339,19 +361,27 @@
               </div>
               <p class="pickup-note" id="pickup-note"></p>
             </div>
-            <button class="btn-wa-order" id="pm-order-btn">
-              <span>📲</span> Pre-Order via WhatsApp
-            </button>
-            <button class="btn-share" id="pm-share-btn">
-              <span>🔗</span> Share
-            </button>
           </div>
-        </div>
+
+        </div><!-- /pm-info -->
+      </div><!-- /pm-scroll-body -->
+
+      <!-- ── STICKY BOTTOM ACTION BAR ── -->
+      <div class="pm-action-bar">
+        <button class="btn-wa-order pm-order-main" id="pm-order-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.099.544 4.07 1.497 5.785L0 24l6.388-1.676A11.93 11.93 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.896 0-3.674-.523-5.196-1.432l-.372-.219-3.793.995.998-3.747-.241-.385A9.943 9.943 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+          Pre-Order via WhatsApp
+        </button>
+        <button class="btn-share pm-share-side" id="pm-share-btn" aria-label="Share">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        </button>
       </div>
-    </div>
-  </div>
+
+    </div><!-- /modal-box -->
+  </div><!-- /product-modal -->
 
   <!-- Lead Popup (Phone Collection) -->
+
   <div id="lead-popup" class="popup-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="lead-popup-title">
     <div class="popup-box">
       <button class="popup-close" id="popup-close" aria-label="Close">✕</button>

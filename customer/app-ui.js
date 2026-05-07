@@ -113,6 +113,11 @@ function _getPickupString() {
 export function setProducts(products) {
     _products = Array.isArray(products) ? products : [];
     _filtered = [..._products];
+    // Bug 6 fix: prune stale shuffle seeds for products that no longer exist
+    const currentIds = new Set(_products.map(p => p.id));
+    for (const key of _shuffleSeed.keys()) {
+        if (!currentIds.has(key)) _shuffleSeed.delete(key);
+    }
 }
 
 export function setSearchTerm(term) {
@@ -740,34 +745,37 @@ function openFullscreenViewer(gallery, startIdx = 0, title = "") {
     viewer.classList.remove("hidden");
     document.body.style.overflow = "hidden";
 
+    // AbortController cleans up ALL listeners when viewer closes (Bug 4 fix)
+    const ac = new AbortController();
+    const sig = { signal: ac.signal };
+
     // Close handlers
     function closeViewer() {
+        ac.abort(); // removes all attached listeners atomically
         viewer.classList.add("hidden");
-        // Only restore scroll if no other modal is open
         const anyOpen = document.querySelector(".modal-overlay:not(.hidden)");
         if (!anyOpen) document.body.style.overflow = "";
     }
 
-    if (fsClose) {
-        const newClose = fsClose.cloneNode(true);
-        fsClose.parentNode.replaceChild(newClose, fsClose);
-        newClose.addEventListener("click", closeViewer);
-    }
+    // Close button
+    const freshClose = document.getElementById("fs-close");
+    freshClose?.addEventListener("click", closeViewer, sig);
 
-    // Tap backdrop to close
-    viewer.onclick = (e) => { if (e.target === viewer || e.target.classList.contains("fs-content")) closeViewer(); };
+    // Bug 10 fix: use currentTarget so backdrop tap works after thumbnail clicks
+    viewer.addEventListener("click", (e) => {
+        if (e.target === e.currentTarget || e.target.classList.contains("fs-content")) closeViewer();
+    }, sig);
 
-    // Keyboard: Escape to close, arrows to switch images
-    const keyHandler = (e) => {
-        if (e.key === "Escape") { closeViewer(); document.removeEventListener("keydown", keyHandler); }
+    // Keyboard: Escape closes, arrows switch image
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeViewer();
         if (e.key === "ArrowRight" && gallery.length > 1) showImage((currentIdx + 1) % gallery.length);
         if (e.key === "ArrowLeft"  && gallery.length > 1) showImage((currentIdx - 1 + gallery.length) % gallery.length);
-    };
-    document.addEventListener("keydown", keyHandler);
+    }, sig);
 
     // Swipe left/right on mobile
     let _touchStartX = 0;
-    viewer.addEventListener("touchstart", (e) => { _touchStartX = e.changedTouches[0].clientX; }, { passive: true, once: false });
+    viewer.addEventListener("touchstart", (e) => { _touchStartX = e.changedTouches[0].clientX; }, { passive: true, signal: ac.signal });
     viewer.addEventListener("touchend", (e) => {
         const dx = e.changedTouches[0].clientX - _touchStartX;
         if (Math.abs(dx) > 50 && gallery.length > 1) {
@@ -775,7 +783,7 @@ function openFullscreenViewer(gallery, startIdx = 0, title = "") {
                 ? (currentIdx + 1) % gallery.length
                 : (currentIdx - 1 + gallery.length) % gallery.length);
         }
-    }, { passive: true });
+    }, { passive: true, signal: ac.signal });
 }
 
 

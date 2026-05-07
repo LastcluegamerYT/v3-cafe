@@ -5,7 +5,8 @@ import {
     getShopSettings,
     getWhatsAppNumberSync,
     safeTrackPageView,
-    subscribeProducts
+    subscribeProducts,
+    updateLocalProductsCache
 } from "./app-data.js?v=2";
 
 import {
@@ -67,9 +68,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     ]);
 
     // 5. Apply shop settings to DOM
-    // Store WA number globally so mobile SPA page can access it
-    window.__v3WaNumber = getWhatsAppNumberSync();
-    applyShopSettings(settings, window.__v3WaNumber);
+    // getWhatsAppNumberSync() is safe here — getShopSettings() just ran above and cached it
+    applyShopSettings(settings, getWhatsAppNumberSync());
 
     // 6. Populate product UI
     setProducts(products);
@@ -77,16 +77,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     applyFiltersAndRender();
     renderFeatured();
 
-    // 7. Restore scroll position when returning from product page (mobile back button)
-    const savedScroll = sessionStorage.getItem('v3_scrollY');
-    if (savedScroll) {
-        requestAnimationFrame(() => {
-            window.scrollTo({ top: parseInt(savedScroll, 10), behavior: 'instant' });
-            sessionStorage.removeItem('v3_scrollY');
-        });
-    }
-
-    // 8. Handle deep link AFTER products are loaded
+    // 7. Handle deep link AFTER products are loaded
     handleHashNavigation();
 
     // 8. Start lead popup timer last (after page is ready)
@@ -105,15 +96,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Background Reactivity (Real-Time Subscription)
     // Listens directly to Firebase. If admin adds/edits a product, UI updates instantly!
     subscribeProducts((freshProducts) => {
-        // Update local cache so next reload is instant
-        try {
-            localStorage.setItem("v3_allProducts", JSON.stringify({ data: freshProducts, time: Date.now() }));
-        } catch (e) {
-            if (e.name === 'QuotaExceededError') {
-                localStorage.removeItem("v3_image_cache");
-                try { localStorage.setItem("v3_allProducts", JSON.stringify({ data: freshProducts, time: Date.now() })); } catch (e2) { }
-            }
-        }
+        // Update both the in-memory cache (_allProducts) and localStorage so next reload is instant
+        updateLocalProductsCache(freshProducts);
 
         // Update UI instantly (pass true to avoid interrupting modals)
         setProducts(freshProducts);
@@ -134,37 +118,28 @@ document.addEventListener("DOMContentLoaded", async () => {
 //  FULLSCREEN (MOBILE APP EXPERIENCE)
 // ══════════════════════════════════════════
 function initFullscreen() {
-    // Attempt fullscreen on all devices up to 1200px (phones, tablets, small laptops)
+    // Only attempt on mobile/tablet devices
     if (window.innerWidth > 1200) return;
 
     const requestFullscreen = () => {
         const docElm = document.documentElement;
-
-        // If already fullscreen, do nothing
         if (
             document.fullscreenElement ||
             document.webkitFullscreenElement ||
             document.mozFullScreenElement ||
             document.msFullscreenElement
         ) return;
-
         try {
-            if (docElm.requestFullscreen) {
-                docElm.requestFullscreen().catch(() => { });
-            } else if (docElm.webkitRequestFullscreen) { // Safari/Chrome
-                docElm.webkitRequestFullscreen();
-            } else if (docElm.mozRequestFullScreen) { // Firefox
-                docElm.mozRequestFullScreen();
-            } else if (docElm.msRequestFullscreen) { // IE/Edge
-                docElm.msRequestFullscreen();
-            }
-        } catch (e) { }
+            if (docElm.requestFullscreen) docElm.requestFullscreen().catch(() => {});
+            else if (docElm.webkitRequestFullscreen) docElm.webkitRequestFullscreen();
+            else if (docElm.mozRequestFullScreen) docElm.mozRequestFullScreen();
+            else if (docElm.msRequestFullscreen) docElm.msRequestFullscreen();
+        } catch (e) {}
     };
 
-    // Attach to multiple interaction types for maximum Android compatibility
-    document.addEventListener("click", requestFullscreen);
-    document.addEventListener("touchend", requestFullscreen, { passive: true });
-    document.addEventListener("touchstart", requestFullscreen, { passive: true });
+    // { once: true } — fires ONE time only, then auto-removes itself (Bug 5 fix)
+    document.addEventListener("touchend", requestFullscreen, { passive: true, once: true });
+    document.addEventListener("click", requestFullscreen, { once: true });
 }
 
 // ══════════════════════════════════════════
@@ -177,7 +152,13 @@ function applyShopSettings(settings, waNumber) {
     setText("hero-shop-name", shopName);
     setText("footer-shop-name", shopName);
     setText("footer-address", address);
-    document.title = `${shopName} — Fresh Baked with Love`;
+    // Only update title if shopName differs from placeholder to preserve SEO title (Bug 9 fix)
+    const DEFAULT_TITLE = "V3 Cafe Menu — Order Fresh Cakes, Cupcakes & Custom Bakery Items Online | Nepal";
+    if (shopName && shopName !== "V3 Cafe") {
+        document.title = `${shopName} — Fresh Cakes & Bakery Nepal`;
+    } else {
+        document.title = DEFAULT_TITLE;
+    }
 
     // Auto-update copyright year
     const yearEl = document.getElementById("footer-year");
@@ -338,7 +319,7 @@ function initBackToTop() {
     const btn = document.getElementById("back-to-top");
     if (!btn) return;
     window.addEventListener("scroll", () => {
-        btn.classList.toggle("visible", window.scrollY > 400);
+        btn.classList.toggle("hidden", window.scrollY <= 400); // Bug 7: was .visible, CSS uses .hidden
     }, { passive: true });
     btn.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
 }
@@ -405,11 +386,7 @@ function handleHashNavigation() {
 
     // ── 2. Check hash (#product=slug) ──
     const hash = window.location.hash;
-    if (!hash) {
-        // If hash is cleared (e.g. back button pressed), close the modal
-        closeModal("product-modal");
-        return;
-    }
+    if (!hash) return;
 
     const productMatch = hash.match(/^#product=(.+)$/);
     if (productMatch) {

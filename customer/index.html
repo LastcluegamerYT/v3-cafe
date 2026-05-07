@@ -53,8 +53,17 @@
     "description": "Fresh custom cakes, cupcakes, pastries and bakery items. Order online via WhatsApp.",
     "url": "https://v3-cafe.netlify.app/",
     "image": "https://v3-cafe.netlify.app/cafe_icon.jpg",
+    "telephone": "+977",
     "servesCuisine": ["Bakery", "Desserts", "Custom Cakes", "Pastries"],
     "priceRange": "$$",
+    "openingHoursSpecification": [
+      {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+        "opens": "09:00",
+        "closes": "21:00"
+      }
+    ],
     "hasMenu": {
       "@type": "Menu",
       "name": "V3 Cafe Bakery Menu",
@@ -82,13 +91,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <!-- Preload critical logo image -->
-  <link rel="preload" as="image" href="../cafe_icon.jpg" />
+  <link rel="preload" as="image" href="https://v3-cafe.netlify.app/cafe_icon.jpg" />
 
   <link
     href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;800&display=swap"
     rel="stylesheet" />
-  <link rel="stylesheet" href="style-base.css" />
-  <link rel="stylesheet" href="style-components.css" />
+  <link rel="stylesheet" href="style-base.css?v=2" />
+  <link rel="stylesheet" href="style-components.css?v=2" />
 </head>
 
 <body>
@@ -142,7 +151,7 @@
     <div class="hero-content">
       <div class="hero-text">
         <span class="hero-badge">🧁 Freshly Baked Daily</span>
-        <h1 class="hero-title" id="hero-shop-name">V3 Cafe</h1>
+        <h1 class="hero-title" id="hero-shop-name">V3 Cafe — Fresh Cakes &amp; Bakery Nepal</h1>
         <p class="hero-subtitle">Order ahead on WhatsApp &amp; pick up fresh from our store 🏪</p>
         <div class="hero-btns">
           <button class="btn-primary-lg" data-scroll="products">Browse Menu</button>

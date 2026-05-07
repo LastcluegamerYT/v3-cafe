@@ -122,14 +122,19 @@ let _allProducts = null;
 export async function fetchAllProducts(force = false) {
     if (_allProducts && !force) return _allProducts;
 
-    // 1. Check localStorage (Instant Load)
+    // 1. Check localStorage (Instant Load) — but only if data is < 24h old (Bug 8 fix)
     if (!_allProducts) {
         const cachedStr = localStorage.getItem("v3_allProducts");
         if (cachedStr) {
             try {
                 const parsed = JSON.parse(cachedStr);
-                _allProducts = parsed.data;
-                return _allProducts;
+                const AGE_MS = Date.now() - (parsed.time || 0);
+                const MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
+                if (parsed.data && AGE_MS < MAX_AGE) {
+                    _allProducts = parsed.data;
+                    return _allProducts;
+                }
+                // Cache is too old — fall through to Firebase fetch
             } catch (e) {}
         }
     }

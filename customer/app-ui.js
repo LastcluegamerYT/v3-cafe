@@ -48,7 +48,7 @@ try { _imageCache = JSON.parse(localStorage.getItem("v3_image_cache") || "{}"); 
 const NST_OFFSET_MS = (5 * 60 + 45) * 60 * 1000;
 const CAFE_OPEN_MIN = 9 * 60; // 9:00 AM
 const CAFE_CLOSE_MIN = 21 * 60; // 9:00 PM
-const PICKUP_BUFFER = 45;      // min lead time in minutes
+const PICKUP_BUFFER = 300;      // 5 hours lead time in minutes
 
 function _nowInNST() {
     // Shift UTC epoch by NST offset, read as UTC fields → gives NST values
@@ -461,194 +461,14 @@ function bindCardEvents(container) {
 }
 
 // ══════════════════════════════════════════
-//  PRODUCT DETAIL MODAL / SPA PAGE
+//  PRODUCT DETAIL MODAL
 // ══════════════════════════════════════════
-
-let _ppQty = 1;
-let _ppGalleryIndex = 0;
-
-function _ppEsc(s) { const d = document.createElement('div'); d.textContent = String(s || ''); return d.innerHTML; }
-
-export function closeMobilePage() {
-    const page = document.getElementById('product-page');
-    if (!page) return;
-    page.style.display = 'none';
-    document.body.style.overflow = '';
-}
-
-export function openMobilePage(product, allProducts, waNumber) {
-    const page = document.getElementById('product-page');
-    if (!page) return;
-
-    // Reset scroll of the product page itself
-    page.scrollTo(0, 0);
-    _ppQty = 1;
-    _ppGalleryIndex = 0;
-
-    const avail = (product.availability || 'available').toLowerCase();
-    const price = Number(product.price) || 0;
-    const origPrice = Number(product.meta?.originalPrice) || 0;
-    const imageCache = (() => { try { return JSON.parse(localStorage.getItem('v3_image_cache') || '{}'); } catch (_) { return {}; } })();
-    const detail = buildProductDetail(product);
-    const gallery = detail.gallery?.length ? detail.gallery : (product.mainImage ? [{ url: product.mainImage, alt: product.title }] : []);
-    const catEmoji = { Cake:'🎂', Pastry:'🥐', Cupcake:'🧁', Cookie:'🍪', Bread:'🍞', Drink:'🥤', Dessert:'🍮', Custom:'🎨' };
-
-    // Top bar
-    document.getElementById('pp-title').textContent = product.title;
-
-    // Gallery
-    const track = document.getElementById('pp-gallery-track');
-    const dots = document.getElementById('pp-gallery-dots');
-    if (gallery.length) {
-        track.innerHTML = gallery.map(img => {
-            const src = imageCache[img.url] || img.url;
-            return src
-                ? `<img style="min-width:100%;aspect-ratio:1/1;object-fit:contain;background:#111;" src="${_ppEsc(src)}" alt="${_ppEsc(img.alt||product.title)}" loading="eager">`
-                : `<div style="min-width:100%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;font-size:4rem;background:#1a1a1a;">🧁</div>`;
-        }).join('');
-        if (gallery.length > 1) {
-            dots.innerHTML = gallery.map((_, i) => `<div style="width:7px;height:7px;border-radius:50%;background:${i===0?'#b45309':'rgba(255,255,255,.3)'};" data-gi="${i}"></div>`).join('');
-            dots.style.display = 'flex';
-            let sx = 0;
-            const goTo = i => {
-                _ppGalleryIndex = Math.max(0, Math.min(gallery.length-1, i));
-                track.style.transform = `translateX(-${_ppGalleryIndex*100}%)`;
-                dots.querySelectorAll('[data-gi]').forEach((d,j) => d.style.background = j===_ppGalleryIndex?'#b45309':'rgba(255,255,255,.3)');
-            };
-            track.addEventListener('touchstart', e => { sx = e.touches[0].clientX; }, { passive: true });
-            track.addEventListener('touchend', e => {
-                const dx = e.changedTouches[0].clientX - sx;
-                if (Math.abs(dx) > 40) dx < 0 ? goTo(_ppGalleryIndex+1) : goTo(_ppGalleryIndex-1);
-            }, { passive: true });
-        } else { dots.style.display = 'none'; }
-    } else {
-        track.innerHTML = `<div style="min-width:100%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;font-size:4rem;background:#1a1a1a;">🧁</div>`;
-        dots.style.display = 'none';
-    }
-
-    // Badge
-    const badge = document.getElementById('pp-avail-badge');
-    badge.style.display = '';
-    badge.style.color = avail==='available'?'#22c55e':avail==='custom'?'#a78bfa':'#ef4444';
-    badge.textContent = avail==='available'?'✅ Available':avail==='custom'?'🎨 Custom':'❌ Out of Stock';
-
-    // Title & Category
-    document.getElementById('pp-cat').textContent = (catEmoji[product.category]||'🍽️') + ' ' + (product.category||'Bakery');
-    document.getElementById('pp-name').textContent = product.title;
-
-    // Price
-    document.getElementById('pp-price').textContent = `Rs. ${price.toLocaleString()}`;
-    const mrpEl = document.getElementById('pp-mrp'); const offEl = document.getElementById('pp-off');
-    if (origPrice > 0 && origPrice > price) {
-        const pct = Math.round((1-price/origPrice)*100);
-        mrpEl.textContent = `Rs. ${origPrice.toLocaleString()}`; mrpEl.style.display='';
-        offEl.textContent = `${pct}% OFF`; offEl.style.display='';
-    } else { mrpEl.style.display='none'; offEl.style.display='none'; }
-
-    // Description
-    const descWrap = document.getElementById('pp-desc-wrap');
-    const descEl = document.getElementById('pp-desc');
-    const showMoreBtn = document.getElementById('pp-show-more');
-    if (product.description) {
-        descWrap.style.display='';
-        descEl.textContent = product.description;
-        descEl.style.cssText = 'font-size:.9rem;line-height:1.6;color:#a3a3a3;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;';
-        showMoreBtn.style.display='none'; showMoreBtn.textContent='...show more';
-        requestAnimationFrame(() => { if (descEl.scrollHeight > descEl.clientHeight+2) showMoreBtn.style.display='inline-block'; });
-        showMoreBtn.onclick = () => {
-            const exp = descEl.style.webkitLineClamp === 'unset';
-            descEl.style.webkitLineClamp = exp ? '3' : 'unset';
-            descEl.style.overflow = exp ? 'hidden' : 'visible';
-            descEl.style.display = exp ? '-webkit-box' : 'block';
-            showMoreBtn.textContent = exp ? '...show more' : 'show less ▲';
-        };
-    } else { descWrap.style.display='none'; }
-
-    // Ingredients
-    const ingWrap = document.getElementById('pp-ing-wrap');
-    if (product.ingredients?.length) {
-        ingWrap.style.display='';
-        document.getElementById('pp-ings').innerHTML = product.ingredients.map(i=>`<span style="background:#242424;border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:.25rem .7rem;font-size:.73rem;color:#a3a3a3;">${_ppEsc(i)}</span>`).join('');
-    } else { ingWrap.style.display='none'; }
-
-    // Tags
-    const tagsWrap = document.getElementById('pp-tags-wrap');
-    if (product.tags?.length) {
-        tagsWrap.style.display='';
-        document.getElementById('pp-tags').innerHTML = product.tags.map(t=>`<span style="background:#242424;border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:.25rem .7rem;font-size:.73rem;color:#a3a3a3;">#${_ppEsc(t)}</span>`).join('');
-    } else { tagsWrap.style.display='none'; }
-
-    // Note
-    const noteEl = document.getElementById('pp-note');
-    if (product.note) { noteEl.textContent='📝 '+product.note; noteEl.style.display=''; } else { noteEl.style.display='none'; }
-
-    // Qty
-    document.getElementById('pp-qty-val').textContent = '1';
-    document.getElementById('pp-qty-minus').onclick = () => { if(_ppQty>1){_ppQty--;document.getElementById('pp-qty-val').textContent=_ppQty;} };
-    document.getElementById('pp-qty-plus').onclick = () => { if(_ppQty<20){_ppQty++;document.getElementById('pp-qty-val').textContent=_ppQty;} };
-
-    // Order
-    const orderBtn = document.getElementById('pp-order-btn');
-    if (avail === 'out of stock') {
-        orderBtn.disabled=true; orderBtn.textContent='❌ Out of Stock'; orderBtn.style.opacity='.5';
-    } else {
-        orderBtn.disabled=false; orderBtn.innerHTML='📲 Order on WhatsApp'; orderBtn.style.opacity='1';
-        orderBtn.onclick = () => {
-            if (!waNumber) { alert('WhatsApp not configured yet.'); return; }
-            try {
-                const url = buildWhatsAppUrl({ phoneNumber: waNumber, product, qty: _ppQty });
-                window.open(url, '_blank');
-            } catch(_) {}
-        };
-    }
-
-    // Share
-    const shareUrl = `${location.origin}${location.pathname}?product=${encodeURIComponent(product.id)}`;
-    const doShare = () => {
-        if (navigator.share) navigator.share({ title: product.title, text:`Check out ${product.title} at V3 Cafe!`, url: shareUrl });
-        else { navigator.clipboard?.writeText(shareUrl); showToast('Link copied!'); }
-    };
-    document.getElementById('pp-share').onclick = doShare;
-    document.getElementById('pp-share-bar').onclick = doShare;
-
-    // Recommendations
-    const others = (allProducts||[]).filter(p=>p.id!==product.id).sort(()=>Math.random()-.5).slice(0,8);
-    const recGrid = document.getElementById('pp-rec-grid');
-    const recSection = document.getElementById('pp-rec-section');
-    if (others.length) {
-        recSection.style.display='';
-        recGrid.innerHTML = others.map(p=>{
-            const src = imageCache[p.mainImage]||p.mainImage;
-            const img = src ? `<img style="width:100%;aspect-ratio:1/1;object-fit:cover;" src="${_ppEsc(src)}" alt="${_ppEsc(p.title)}" loading="lazy">` : `<div style="width:100%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;font-size:2.5rem;background:#1a1a1a;">🧁</div>`;
-            return `<div data-rid="${_ppEsc(p.id)}" style="background:#1a1a1a;border:1px solid rgba(255,255,255,.08);border-radius:14px;overflow:hidden;cursor:pointer;">${img}<div style="padding:.6rem .7rem;"><div style="font-size:.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#f5f5f5;">${_ppEsc(p.title)}</div><div style="font-size:.78rem;color:#b45309;font-weight:700;margin-top:2px;">Rs. ${(Number(p.price)||0).toLocaleString()}</div></div></div>`;
-        }).join('');
-        recGrid.querySelectorAll('[data-rid]').forEach(card => {
-            card.addEventListener('click', () => {
-                const rp = (allProducts||[]).find(x=>x.id===card.dataset.rid);
-                if (rp) _openMobilePage(rp, allProducts, waNumber);
-            });
-        });
-    } else { recSection.style.display='none'; }
-
-    // Show the page
-    page.style.display='block';
-    document.body.style.overflow='hidden';
-}
 
 export async function openProductModal(id) {
     if (!id) return;
 
     // Fast lookup in already-loaded products
     let product = _products.find(p => p.id === id || p.slug === id);
-
-    // If on mobile, use SPA layer (zero reload, instant)
-    if (window.innerWidth <= 900 && product) {
-        sessionStorage.setItem('v3_scrollY', String(window.scrollY));
-        openMobilePage(product, _products, window.__v3WaNumber || '');
-        history.pushState({ productId: id }, '', `?product=${encodeURIComponent(id)}`);
-        safeTrackProductView(product.id);
-        return;
-    }
 
     // Firebase fallback
     if (!product) {
@@ -675,12 +495,11 @@ export async function openProductModal(id) {
 
     openModal("product-modal");
 
-    // Update URL — use replaceState so the Back button returns to the previous page
-    // rather than cycling through each product the user viewed.
+    // Update URL — use pushState so the Back button closes the modal
     const slug = product.slug || product.id;
     const newHash = `#product=${encodeURIComponent(slug)}`;
     if (window.location.hash !== newHash) {
-        history.replaceState(null, "", newHash);
+        history.pushState({ modalOpen: true }, "", newHash);
     }
 }
 
@@ -847,17 +666,19 @@ function renderModalGallery(p) {
 //  MODAL CONTROLS — bind once from app-main
 // ══════════════════════════════════════════
 export function initModalControls() {
-    // Product modal close
-    document.getElementById("product-modal-close")?.addEventListener("click", () => {
+    const handleModalClose = () => {
         closeModal("product-modal");
-        // Clear the hash — replaceState keeps forward/back history clean
-        history.replaceState(null, "", window.location.pathname + window.location.search);
-    });
-    document.getElementById("product-modal")?.addEventListener("click", e => {
-        if (e.target === e.currentTarget) {
-            closeModal("product-modal");
+        if (history.state && history.state.modalOpen) {
+            history.back(); // Pop the state we pushed
+        } else {
             history.replaceState(null, "", window.location.pathname + window.location.search);
         }
+    };
+
+    // Product modal close
+    document.getElementById("product-modal-close")?.addEventListener("click", handleModalClose);
+    document.getElementById("product-modal")?.addEventListener("click", e => {
+        if (e.target === e.currentTarget) handleModalClose();
     });
 
     // Custom modal close

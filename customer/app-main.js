@@ -67,8 +67,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     ]);
 
     // 5. Apply shop settings to DOM
-    // getWhatsAppNumberSync() is safe here — getShopSettings() just ran above and cached it
-    applyShopSettings(settings, getWhatsAppNumberSync());
+    // Store WA number globally so mobile SPA page can access it
+    window.__v3WaNumber = getWhatsAppNumberSync();
+    applyShopSettings(settings, window.__v3WaNumber);
 
     // 6. Populate product UI
     setProducts(products);
@@ -76,7 +77,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     applyFiltersAndRender();
     renderFeatured();
 
-    // 7. Handle deep link AFTER products are loaded
+    // 7. Restore scroll position when returning from product page (mobile back button)
+    const savedScroll = sessionStorage.getItem('v3_scrollY');
+    if (savedScroll) {
+        requestAnimationFrame(() => {
+            window.scrollTo({ top: parseInt(savedScroll, 10), behavior: 'instant' });
+            sessionStorage.removeItem('v3_scrollY');
+        });
+    }
+
+    // 8. Handle deep link AFTER products are loaded
     handleHashNavigation();
 
     // 8. Start lead popup timer last (after page is ready)
@@ -105,11 +115,18 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
         }
 
-        // Update UI instantly
+        // Update UI instantly (pass true to avoid interrupting modals)
         setProducts(freshProducts);
         renderCategoryChips(freshProducts);
-        applyFiltersAndRender();
-        renderFeatured();
+
+        const anyOpen = document.querySelector(".modal-overlay:not(.hidden), .popup-overlay:not(.hidden)");
+        if (anyOpen) {
+            // ApplyFiltersAndRender handles pending Render logic
+            applyFiltersAndRender(true);
+        } else {
+            applyFiltersAndRender(false);
+            renderFeatured();
+        }
     });
 });
 
@@ -388,7 +405,11 @@ function handleHashNavigation() {
 
     // ── 2. Check hash (#product=slug) ──
     const hash = window.location.hash;
-    if (!hash) return;
+    if (!hash) {
+        // If hash is cleared (e.g. back button pressed), close the modal
+        closeModal("product-modal");
+        return;
+    }
 
     const productMatch = hash.match(/^#product=(.+)$/);
     if (productMatch) {

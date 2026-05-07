@@ -384,16 +384,16 @@
   position: relative;
   border-radius: var(--radius);
   overflow: hidden;
-  aspect-ratio: 1;
-  background: var(--border-light)
+  background: #f9f9f9;
 }
 
 .pm-main-img {
   width: 100%;
-  height: 100%;
+  height: auto;
+  max-height: 50vh;
   object-fit: contain;
   transition: opacity .18s ease;
-  background: #f9f9f9;
+  display: block;
 }
 
 .pm-img-ph {
@@ -1071,10 +1071,13 @@ select.cm-input option {
     grid-template-columns: 1fr
   }
 
-  /* Give image perfectly square full space on mobile */
+  /* Let image naturally dictate height on mobile without cropping */
   .pm-main-img-wrap {
-    aspect-ratio: 1;
-    max-height: 380px;
+    background: transparent;
+  }
+  .pm-main-img {
+    max-height: 55vh;
+    border-radius: var(--radius-lg);
   }
 
   .pm-gallery {

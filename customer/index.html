@@ -275,6 +275,11 @@
           <div class="pm-main-img-wrap">
             <img id="pm-main-img" src="" alt="" class="pm-main-img" />
             <div id="pm-img-placeholder" class="pm-img-ph">🧁</div>
+            <button id="pm-fs-btn" class="pm-fs-btn" aria-label="View Fullscreen" title="View Fullscreen">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+              </svg>
+            </button>
           </div>
           <div id="pm-thumbnails" class="pm-thumbnails"></div>
         </div>
@@ -417,6 +422,15 @@
         </form>
       </div>
     </div>
+  </div>
+
+  <!-- ══ FULLSCREEN IMAGE VIEWER ══ -->
+  <div id="fs-viewer" class="fs-overlay hidden" role="dialog" aria-modal="true" aria-label="Fullscreen image viewer">
+    <button id="fs-close" class="fs-close" aria-label="Close fullscreen">✕</button>
+    <div class="fs-content">
+      <img id="fs-main-img" class="fs-img" src="" alt="Product image" />
+    </div>
+    <div id="fs-thumbs" class="fs-thumbs"></div>
   </div>
 
   <!-- Toast Container -->

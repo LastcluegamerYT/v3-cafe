@@ -48,7 +48,7 @@ try { _imageCache = JSON.parse(localStorage.getItem("v3_image_cache") || "{}"); 
 const NST_OFFSET_MS = (5 * 60 + 45) * 60 * 1000;
 const CAFE_OPEN_MIN = 9 * 60; // 9:00 AM
 const CAFE_CLOSE_MIN = 21 * 60; // 9:00 PM
-const PICKUP_BUFFER = 300;      // 5 hours lead time in minutes
+const PICKUP_BUFFER = 45;      // min lead time in minutes
 
 function _nowInNST() {
     // Shift UTC epoch by NST offset, read as UTC fields → gives NST values
@@ -463,7 +463,6 @@ function bindCardEvents(container) {
 // ══════════════════════════════════════════
 //  PRODUCT DETAIL MODAL
 // ══════════════════════════════════════════
-
 export async function openProductModal(id) {
     if (!id) return;
 
@@ -495,11 +494,12 @@ export async function openProductModal(id) {
 
     openModal("product-modal");
 
-    // Update URL — use pushState so the Back button closes the modal
+    // Update URL — use replaceState so the Back button returns to the previous page
+    // rather than cycling through each product the user viewed.
     const slug = product.slug || product.id;
     const newHash = `#product=${encodeURIComponent(slug)}`;
     if (window.location.hash !== newHash) {
-        history.pushState({ modalOpen: true }, "", newHash);
+        history.replaceState(null, "", newHash);
     }
 }
 
@@ -610,6 +610,7 @@ function renderModalGallery(p) {
     const mainImg = document.getElementById("pm-main-img");
     const imgPh = document.getElementById("pm-img-placeholder");
     const thumbsEl = document.getElementById("pm-thumbnails");
+    const fsBtn = document.getElementById("pm-fs-btn");
 
     const gallery = (p.gallery && p.gallery.length)
         ? p.gallery
@@ -619,6 +620,7 @@ function renderModalGallery(p) {
         if (mainImg) mainImg.style.display = "none";
         if (imgPh) imgPh.style.display = "flex";
         if (thumbsEl) thumbsEl.innerHTML = "";
+        if (fsBtn) fsBtn.style.display = "none";
         return;
     }
 
@@ -634,6 +636,31 @@ function renderModalGallery(p) {
         };
     }
     if (imgPh) imgPh.style.display = "none";
+
+    // Wire fullscreen button
+    if (fsBtn) {
+        fsBtn.style.display = "flex";
+        // Remove old handler to avoid stacking listeners
+        const newFsBtn = fsBtn.cloneNode(true);
+        fsBtn.parentNode.replaceChild(newFsBtn, fsBtn);
+        newFsBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const activeIdx = thumbsEl
+                ? [...thumbsEl.querySelectorAll(".pm-thumb")].findIndex(t => t.classList.contains("active"))
+                : 0;
+            openFullscreenViewer(gallery, activeIdx < 0 ? 0 : activeIdx, p.title);
+        });
+        // Also allow tapping the main image to go fullscreen
+        if (mainImg) {
+            mainImg.style.cursor = "zoom-in";
+            mainImg.onclick = () => {
+                const activeIdx = thumbsEl
+                    ? [...thumbsEl.querySelectorAll(".pm-thumb")].findIndex(t => t.classList.contains("active"))
+                    : 0;
+                openFullscreenViewer(gallery, activeIdx < 0 ? 0 : activeIdx, p.title);
+            };
+        }
+    }
 
     if (thumbsEl) {
         if (gallery.length > 1) {
@@ -663,22 +690,110 @@ function renderModalGallery(p) {
 }
 
 // ══════════════════════════════════════════
+//  FULLSCREEN IMAGE VIEWER
+// ══════════════════════════════════════════
+function openFullscreenViewer(gallery, startIdx = 0, title = "") {
+    const viewer = document.getElementById("fs-viewer");
+    const fsImg = document.getElementById("fs-main-img");
+    const fsThumbsEl = document.getElementById("fs-thumbs");
+    const fsClose = document.getElementById("fs-close");
+    if (!viewer || !fsImg) return;
+
+    let currentIdx = startIdx;
+
+    function showImage(idx) {
+        currentIdx = idx;
+        const item = gallery[idx];
+        fsImg.style.opacity = "0";
+        setTimeout(() => {
+            fsImg.src = _imageCache[item.url] || item.url;
+            fsImg.alt = item.alt || title;
+            fsImg.style.opacity = "1";
+        }, 120);
+        // Update active thumb
+        if (fsThumbsEl) {
+            fsThumbsEl.querySelectorAll(".fs-thumb").forEach((t, i) => {
+                t.classList.toggle("active", i === idx);
+            });
+        }
+    }
+
+    // Build bottom thumbnail strip
+    if (fsThumbsEl) {
+        if (gallery.length > 1) {
+            fsThumbsEl.innerHTML = gallery.map((img, i) => `
+                <img class="fs-thumb ${i === startIdx ? "active" : ""}"
+                     src="${esc(_imageCache[img.url] || img.url)}"
+                     alt="${esc(img.alt || title)}"
+                     data-idx="${i}" loading="lazy"
+                     onerror="this.style.display='none'" />`
+            ).join("");
+            fsThumbsEl.querySelectorAll(".fs-thumb").forEach(t => {
+                t.addEventListener("click", () => showImage(Number(t.dataset.idx)));
+            });
+        } else {
+            fsThumbsEl.innerHTML = "";
+        }
+    }
+
+    showImage(startIdx);
+    viewer.classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+
+    // Close handlers
+    function closeViewer() {
+        viewer.classList.add("hidden");
+        // Only restore scroll if no other modal is open
+        const anyOpen = document.querySelector(".modal-overlay:not(.hidden)");
+        if (!anyOpen) document.body.style.overflow = "";
+    }
+
+    if (fsClose) {
+        const newClose = fsClose.cloneNode(true);
+        fsClose.parentNode.replaceChild(newClose, fsClose);
+        newClose.addEventListener("click", closeViewer);
+    }
+
+    // Tap backdrop to close
+    viewer.onclick = (e) => { if (e.target === viewer || e.target.classList.contains("fs-content")) closeViewer(); };
+
+    // Keyboard: Escape to close, arrows to switch images
+    const keyHandler = (e) => {
+        if (e.key === "Escape") { closeViewer(); document.removeEventListener("keydown", keyHandler); }
+        if (e.key === "ArrowRight" && gallery.length > 1) showImage((currentIdx + 1) % gallery.length);
+        if (e.key === "ArrowLeft"  && gallery.length > 1) showImage((currentIdx - 1 + gallery.length) % gallery.length);
+    };
+    document.addEventListener("keydown", keyHandler);
+
+    // Swipe left/right on mobile
+    let _touchStartX = 0;
+    viewer.addEventListener("touchstart", (e) => { _touchStartX = e.changedTouches[0].clientX; }, { passive: true, once: false });
+    viewer.addEventListener("touchend", (e) => {
+        const dx = e.changedTouches[0].clientX - _touchStartX;
+        if (Math.abs(dx) > 50 && gallery.length > 1) {
+            showImage(dx < 0
+                ? (currentIdx + 1) % gallery.length
+                : (currentIdx - 1 + gallery.length) % gallery.length);
+        }
+    }, { passive: true });
+}
+
+
+// ══════════════════════════════════════════
 //  MODAL CONTROLS — bind once from app-main
 // ══════════════════════════════════════════
 export function initModalControls() {
-    const handleModalClose = () => {
+    // Product modal close
+    document.getElementById("product-modal-close")?.addEventListener("click", () => {
         closeModal("product-modal");
-        if (history.state && history.state.modalOpen) {
-            history.back(); // Pop the state we pushed
-        } else {
+        // Clear the hash — replaceState keeps forward/back history clean
+        history.replaceState(null, "", window.location.pathname + window.location.search);
+    });
+    document.getElementById("product-modal")?.addEventListener("click", e => {
+        if (e.target === e.currentTarget) {
+            closeModal("product-modal");
             history.replaceState(null, "", window.location.pathname + window.location.search);
         }
-    };
-
-    // Product modal close
-    document.getElementById("product-modal-close")?.addEventListener("click", handleModalClose);
-    document.getElementById("product-modal")?.addEventListener("click", e => {
-        if (e.target === e.currentTarget) handleModalClose();
     });
 
     // Custom modal close

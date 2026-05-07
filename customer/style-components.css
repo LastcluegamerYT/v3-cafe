@@ -1153,3 +1153,126 @@ select.cm-input option {
     gap: .35rem
   }
 }
+
+/* ══════════════════════════════════════════
+   FULLSCREEN IMAGE BUTTON (on product modal)
+══════════════════════════════════════════ */
+.pm-fs-btn {
+  position: absolute;
+  top: .5rem;
+  right: .5rem;
+  background: rgba(0,0,0,.45);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: background .15s, transform .15s;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.pm-fs-btn:hover {
+  background: rgba(0,0,0,.7);
+  transform: scale(1.1);
+}
+
+/* ══════════════════════════════════════════
+   FULLSCREEN IMAGE VIEWER OVERLAY
+══════════════════════════════════════════ */
+.fs-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0,0,0,.96);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  animation: fsIn .2s ease;
+  overscroll-behavior: contain;
+}
+@keyframes fsIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.fs-close {
+  position: absolute;
+  top: .75rem;
+  right: .75rem;
+  background: rgba(255,255,255,.12);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  font-size: 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10001;
+  transition: background .15s, transform .15s;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.fs-close:hover { background: rgba(255,255,255,.25); transform: scale(1.1); }
+
+.fs-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  overflow: hidden;
+  padding: 3.5rem .5rem .5rem;
+}
+
+.fs-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+  touch-action: pinch-zoom;
+  will-change: transform;
+  transition: opacity .2s ease;
+  user-select: none;
+}
+
+.fs-thumbs {
+  display: flex;
+  gap: .5rem;
+  padding: .6rem 1rem;
+  overflow-x: auto;
+  width: 100%;
+  max-width: 600px;
+  justify-content: center;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.fs-thumbs::-webkit-scrollbar { display: none; }
+
+.fs-thumb {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  opacity: .55;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity .15s, border-color .15s;
+}
+.fs-thumb.active,
+.fs-thumb:hover {
+  opacity: 1;
+  border-color: var(--amber, #d97706);
+}
+
+/* Hide thumbnail strip if only 1 image */
+.fs-thumbs:empty { display: none; }

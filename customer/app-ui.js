@@ -10,7 +10,7 @@ import {
     safeTrackProductView,
     safeTrackProductClick,
     fetchProductDetail
-} from "./app-data.js";
+} from "./app-data.js?v=2";
 
 // ── External callbacks wired from app-main (avoids circular deps) ──
 let _onOrderClick = null;
@@ -331,6 +331,21 @@ export function applyFiltersAndRender() {
         case "price-desc": list.sort((a, b) => (b.price || 0) - (a.price || 0)); break;
         case "name-asc": list.sort((a, b) => (a.title || "").localeCompare(b.title || "")); break;
         case "newest": list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)); break;
+        default:
+            if (_activeCategory === "all" && _activeAvail === "all" && !_searchTerm) {
+                let shuffled = [...list].sort(() => Math.random() - 0.5);
+                let top5 = [], seen = new Set(), rest = [];
+                for (let p of shuffled) {
+                    if (top5.length < 5 && !seen.has(p.price)) {
+                        top5.push(p); seen.add(p.price);
+                    } else {
+                        rest.push(p);
+                    }
+                }
+                while (top5.length < 5 && rest.length) top5.push(rest.shift());
+                list = [...top5.sort(() => Math.random() - 0.5), ...rest];
+            }
+            break;
     }
 
     _filtered = list;

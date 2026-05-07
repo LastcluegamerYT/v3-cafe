@@ -4,8 +4,9 @@ import {
     fetchAllProducts,
     getShopSettings,
     getWhatsAppNumberSync,
-    safeTrackPageView
-} from "./app-data.js";
+    safeTrackPageView,
+    subscribeProducts
+} from "./app-data.js?v=2";
 
 import {
     showSkeletons,
@@ -20,7 +21,7 @@ import {
     loadMoreProducts,
     setSearchTerm,
     wireUICallbacks
-} from "./app-ui.js";
+} from "./app-ui.js?v=2";
 
 import {
     initLeadPopup,
@@ -30,7 +31,7 @@ import {
     handleShare,
     initCustomCakeForm,
     openCustomCakeModal
-} from "./app-popup.js";
+} from "./app-popup.js?v=2";
 
 // ══════════════════════════════════════════
 //  BOOTSTRAP
@@ -91,10 +92,20 @@ document.addEventListener("DOMContentLoaded", async () => {
         _hashTimer = setTimeout(handleHashNavigation, 80);
     });
 
-    // Background Reactivity (Stale-While-Revalidate Auto-Update)
-    // If app-data.js detects new products/prices in the background, update UI instantly!
-    window.addEventListener("v3-products-updated", (e) => {
-        const freshProducts = e.detail;
+    // Background Reactivity (Real-Time Subscription)
+    // Listens directly to Firebase. If admin adds/edits a product, UI updates instantly!
+    subscribeProducts((freshProducts) => {
+        // Update local cache so next reload is instant
+        try {
+            localStorage.setItem("v3_allProducts", JSON.stringify({ data: freshProducts, time: Date.now() }));
+        } catch (e) {
+            if (e.name === 'QuotaExceededError') {
+                localStorage.removeItem("v3_image_cache");
+                try { localStorage.setItem("v3_allProducts", JSON.stringify({ data: freshProducts, time: Date.now() })); } catch (e2) { }
+            }
+        }
+
+        // Update UI instantly
         setProducts(freshProducts);
         renderCategoryChips(freshProducts);
         applyFiltersAndRender();
@@ -111,12 +122,12 @@ function initFullscreen() {
 
     const requestFullscreen = () => {
         const docElm = document.documentElement;
-        
+
         // If already fullscreen, do nothing
         if (
-            document.fullscreenElement || 
-            document.webkitFullscreenElement || 
-            document.mozFullScreenElement || 
+            document.fullscreenElement ||
+            document.webkitFullscreenElement ||
+            document.mozFullScreenElement ||
             document.msFullscreenElement
         ) return;
 

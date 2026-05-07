@@ -22,7 +22,7 @@ import {
     subscribeLeads,
     shouldShowLeadPopup,
     markLeadPopupSeen
-} from "../connection/connection.js";
+} from "../connection/connection.js?v=2";
 
 // Re-export what other modules need
 export {
@@ -55,7 +55,7 @@ import { ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-da
 
 let _shopSettings    = null;
 let _settingsFetched = false;
-let _cachedWaNumber  = ""; // sync-accessible after preload
+let _cachedWaNumber  = ""; // sync-ccessible after preloaad
 
 export async function getShopSettings() {
     if (_settingsFetched) return _shopSettings || {};
@@ -115,59 +115,34 @@ export function getWhatsAppNumberSync() {
 }
 
 // ══════════════════════════════════════════
-//  PRODUCTS — cached layer with TTL
+//  PRODUCTS — cached layer
 // ══════════════════════════════════════════
-let _allProducts    = null;
-let _loadedAt       = 0;
-const PRODUCT_TTL   = 60_000; // 60s
+let _allProducts = null;
 
 export async function fetchAllProducts(force = false) {
-    // 1. Check in-memory cache
-    const stale = !_allProducts || (Date.now() - _loadedAt) > PRODUCT_TTL;
-    if (!force && !stale) return _allProducts;
+    if (_allProducts && !force) return _allProducts;
 
-    // 2. Check localStorage (Instant Load)
+    // 1. Check localStorage (Instant Load)
     if (!_allProducts) {
         const cachedStr = localStorage.getItem("v3_allProducts");
         if (cachedStr) {
             try {
                 const parsed = JSON.parse(cachedStr);
                 _allProducts = parsed.data;
-                _loadedAt = parsed.time || Date.now();
-                
-                // 3. Silently fetch in background if stale, to update cache for next time
-                if (Date.now() - parsed.time > PRODUCT_TTL || force) {
-                    getAllProducts({ force: true }).then(fresh => {
-                        _allProducts = fresh;
-                        _loadedAt = Date.now();
-                        try {
-                            localStorage.setItem("v3_allProducts", JSON.stringify({ data: fresh, time: _loadedAt }));
-                        } catch (e) {
-                            if (e.name === 'QuotaExceededError') {
-                                localStorage.removeItem("v3_image_cache");
-                                try { localStorage.setItem("v3_allProducts", JSON.stringify({ data: fresh, time: _loadedAt })); } catch (e2) {}
-                            }
-                        }
-                        // Optional: trigger UI refresh if needed, but background cache is usually enough
-                        window.dispatchEvent(new CustomEvent("v3-products-updated", { detail: fresh }));
-                    }).catch(() => {});
-                }
-                
                 return _allProducts;
             } catch (e) {}
         }
     }
 
-    // 4. Fallback: Fetch directly from Firebase if no local cache exists
+    // 2. Fallback: Fetch directly from Firebase if no local cache exists
     try {
         _allProducts = await getAllProducts({ force: true });
-        _loadedAt    = Date.now();
         try {
-            localStorage.setItem("v3_allProducts", JSON.stringify({ data: _allProducts, time: _loadedAt }));
+            localStorage.setItem("v3_allProducts", JSON.stringify({ data: _allProducts, time: Date.now() }));
         } catch (e) {
             if (e.name === 'QuotaExceededError') {
                 localStorage.removeItem("v3_image_cache"); // Free up space!
-                try { localStorage.setItem("v3_allProducts", JSON.stringify({ data: _allProducts, time: _loadedAt })); } catch(err){}
+                try { localStorage.setItem("v3_allProducts", JSON.stringify({ data: _allProducts, time: Date.now() })); } catch(err){}
             }
         }
         return _allProducts;

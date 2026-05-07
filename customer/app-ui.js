@@ -30,7 +30,7 @@ let _activeCategory = "all";
 let _activeAvail = "all";
 let _sortOrder = "default";
 let _searchTerm = "";
-let _pageSize = 12;
+let _pageSize = 40;
 let _page = 1;
 let _currentProduct = null;
 let _modalQty = 1;
@@ -74,12 +74,9 @@ export function populatePickupSlots(day) {
     const nowMin = _nowInNST();
     const cutoff = day === "today" ? nowMin + PICKUP_BUFFER : -1;
 
-    const slots = [];
-    for (let m = CAFE_OPEN_MIN; m < CAFE_CLOSE_MIN; m += 30) {
-        if (m > cutoff) slots.push(m);
-    }
+    let defaultMin = Math.max(CAFE_OPEN_MIN, cutoff);
 
-    if (!slots.length && day === "today") {
+    if (day === "today" && defaultMin > CAFE_CLOSE_MIN) {
         // No more slots for today — auto-switch to tomorrow
         if (dayEl) dayEl.value = "tomorrow";
         if (noteEl) {
@@ -90,15 +87,24 @@ export function populatePickupSlots(day) {
         return;
     }
 
-    timeEl.innerHTML = slots.map(m => {
-        const label = _fmtSlot(m);
-        return `<option value="${label}">${label}</option>`;
-    }).join("");
+    // Round up to nearest 15 mins for a clean default
+    let m = Math.ceil(defaultMin / 15) * 15;
+    if (m > CAFE_CLOSE_MIN) m = CAFE_CLOSE_MIN;
+
+    const h24 = Math.floor(m / 60).toString().padStart(2, "0");
+    const minStr = (m % 60).toString().padStart(2, "0");
+    
+    // Set native time input
+    timeEl.value = `${h24}:${minStr}`;
+    timeEl.min = day === "today" && cutoff > CAFE_OPEN_MIN 
+        ? `${Math.floor(cutoff/60).toString().padStart(2,"0")}:${(cutoff%60).toString().padStart(2,"0")}` 
+        : "09:00";
+    timeEl.max = "21:00";
 
     if (noteEl) {
         noteEl.textContent = day === "today"
-            ? `🕐 Nepal Time • Slots from now +${PICKUP_BUFFER}min (9 AM–9 PM)`
-            : "🕐 Nepal Time • All slots for tomorrow (9 AM–9 PM)";
+            ? `🕐 Nepal Time • 9 AM–9 PM (+45m prep)`
+            : "🕐 Nepal Time • 9 AM–9 PM";
         noteEl.className = "pickup-note";
     }
 }
@@ -106,8 +112,16 @@ export function populatePickupSlots(day) {
 function _getPickupString() {
     const day = document.getElementById("pickup-day")?.value || "today";
     const time = document.getElementById("pickup-time")?.value || "";
-    if (!time || time === "Loading…") return "";
-    return `${day === "today" ? "Today" : "Tomorrow"} at ${time} (Nepal Time)`;
+    if (!time) return "";
+    
+    let [h, m] = time.split(":");
+    if (!h || !m) return "";
+    let h12 = parseInt(h, 10);
+    const ampm = h12 >= 12 ? "PM" : "AM";
+    if (h12 > 12) h12 -= 12;
+    if (h12 === 0) h12 = 12;
+
+    return `${day === "today" ? "Today" : "Tomorrow"} at ${h12}:${m} ${ampm} (Nepal Time)`;
 }
 
 export function setProducts(products) {

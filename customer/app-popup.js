@@ -7,9 +7,9 @@ import {
     getProductShareUrl,
     shouldShowLeadPopup,
     markLeadPopupSeen
-} from "./app-data.js";
+} from "./app-data.js?v=2";
 
-import { openModal, closeModal, showToast } from "./app-ui.js";
+import { openModal, closeModal, showToast } from "./app-ui.js?v=2";
 
 // ══════════════════════════════════════════
 //  LEAD POPUP (60s trigger + exit intent)

@@ -2,14 +2,14 @@
 
 // ── Firebase imports MUST be first ──
 import { ref, get, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-import bakeryDB from "../connection/connection.js";
+import bakeryDB from "../connection/connection.js?v=2";
 
 const { db } = bakeryDB;
 
 // ── Default credentials (overridden by Firebase settings) ──
 const DEFAULT_USER = "admin";
-const DEFAULT_PASS = "v3cafe2024";
-const SESSION_KEY  = "v3cafe_admin_session";
+const DEFAULT_PASS = "v3cafe2026";
+const SESSION_KEY = "v3cafe_admin_session";
 
 // ── Load credentials from Firebase ──
 async function getStoredCredentials() {
@@ -22,7 +22,7 @@ async function getStoredCredentials() {
                 return val;
             }
         }
-    } catch (_) {}
+    } catch (_) { }
     return { username: DEFAULT_USER, password: DEFAULT_PASS };
 }
 
@@ -72,14 +72,14 @@ export async function changePassword(oldPass, newPass, confirmPass) {
 
 // ── Init login UI ──
 export function initLoginUI(onSuccess) {
-    const screen  = document.getElementById("login-screen");
-    const form    = document.getElementById("login-form");
+    const screen = document.getElementById("login-screen");
+    const form = document.getElementById("login-form");
     const userInp = document.getElementById("l-user");
     const passInp = document.getElementById("l-pass");
-    const errEl   = document.getElementById("login-err");
-    const btnTxt  = document.getElementById("login-btn-txt");
+    const errEl = document.getElementById("login-err");
+    const btnTxt = document.getElementById("login-btn-txt");
     const spinner = document.getElementById("login-spinner");
-    const eyeBtn  = document.getElementById("toggle-pass");
+    const eyeBtn = document.getElementById("toggle-pass");
 
     // If already logged in, skip login screen immediately
     if (isLoggedIn()) {

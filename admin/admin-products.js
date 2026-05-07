@@ -2,7 +2,7 @@
 
 // ── Firebase imports FIRST ──
 import { ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-import bakeryDB from "../connection/connection.js";
+import bakeryDB from "../connection/connection.js?v=2";
 
 const {
     getAllProducts, createProduct, updateProduct, deleteProduct,

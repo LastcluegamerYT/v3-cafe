@@ -2,13 +2,13 @@
 
 // ── Firebase imports FIRST (before any other imports) ──
 import { ref, get, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-import bakeryDB from "../connection/connection.js";
-import { initLoginUI, logout, changePassword } from "./admin-auth.js";
+import bakeryDB from "../connection/connection.js?v=2";
+import { initLoginUI, logout, changePassword } from "./admin-auth.js?v=2";
 import {
     loadProducts, renderProductsGrid, renderRecentProducts,
     openAddForm, initProductForm, initProducts, updateProductBadge,
     getLoadedProducts
-} from "./admin-products.js";
+} from "./admin-products.js?v=2";
 
 const { getDashboardStats, subscribeProducts, subscribeLeads, getAllProducts, db } = bakeryDB;
 

@@ -35,6 +35,8 @@ import {
     openCustomCakeModal
 } from "./app-popup.js?v=2";
 
+const ENABLE_CUSTOMER_LIVE_SYNC = false;
+
 // ══════════════════════════════════════════
 //  BOOTSTRAP
 // ══════════════════════════════════════════
@@ -105,6 +107,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     // For existing products: local images are kept (fast), only metadata updates.
     // For new products:      Firebase URLs are used directly.
     // For deleted products:  removed from UI immediately.
+    // Static fast mode avoids downloading large Firebase image payloads on customer pages.
+    if (!ENABLE_CUSTOMER_LIVE_SYNC) {
+        console.log("[main] Static fast mode: product live sync disabled");
+        return;
+    }
+
     startLiveSync((freshProducts) => {
         // Update in-memory cache
         updateLocalProductsCache(freshProducts);

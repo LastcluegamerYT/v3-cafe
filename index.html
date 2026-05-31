@@ -366,11 +366,10 @@
 
         if (products.length === 0) return;
 
-        // 3. Preload all local main images into browser HTTP cache
-        //    We just create Image objects — the browser caches them via HTTP cache headers.
-        //    NO localStorage / base64 needed: images are local static files!
+        // 3. Warm only the first few local main images.
+        //    The customer page lazy-loads the rest, keeping mobile startup light.
         let loaded = 0;
-        products.forEach(p => {
+        products.slice(0, 6).forEach(p => {
           const relPath = p.mainImage || "";
           if (!relPath) return;
 
@@ -383,11 +382,12 @@
           if (src.startsWith("http")) return; // Skip remote URLs
 
           const img = new Image();
+          img.decoding = "async";
           img.src = src;
           img.onload = () => { loaded++; };
         });
 
-        console.log(`[splash] Preloaded ${products.length} local product images`);
+        console.log(`[splash] Warmed ${Math.min(products.length, 6)} local product images`);
 
       } catch (e) {
         // Silent fallback — customer page will load products from Firebase directly

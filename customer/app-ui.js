@@ -37,9 +37,10 @@ let _modalQty = 1;
 let _shuffleSeed = new Map();
 let _pendingRender = false;
 
-// Load Base64 image cache
-let _imageCache = {};
-try { _imageCache = JSON.parse(localStorage.getItem("v3_image_cache") || "{}"); } catch(e) {}
+function resolveImageUrl(url) {
+    if (!url || typeof url !== "string") return "";
+    return url.startsWith("data:") ? "" : url;
+}
 
 // ══════════════════════════════════════════
 //  NST PICKUP TIME HELPERS
@@ -207,10 +208,10 @@ function buildCardHTML(p) {
     const safeId = esc(p.id || "");
 
     const imgUrl = p.mainImage || p.image;
-    const finalImgSrc = _imageCache[imgUrl] || imgUrl;
+    const finalImgSrc = resolveImageUrl(imgUrl);
 
     const imgHTML = finalImgSrc
-        ? `<img class="card-img" src="${esc(finalImgSrc)}" alt="${esc(p.title)}" loading="lazy"
+        ? `<img class="card-img" src="${esc(finalImgSrc)}" alt="${esc(p.title)}" loading="lazy" decoding="async"
                onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
            <div class="card-img-ph" style="display:none">🧁</div>`
         : `<div class="card-img-ph">🧁</div>`;
@@ -631,7 +632,7 @@ function renderModalGallery(p) {
 
     if (mainImg) {
         const imgUrl = gallery[0].url;
-        mainImg.src = _imageCache[imgUrl] || imgUrl;
+        mainImg.src = resolveImageUrl(imgUrl);
         mainImg.alt = gallery[0].alt || p.title;
         mainImg.style.display = "block";
         mainImg.style.opacity = "1";
@@ -671,8 +672,8 @@ function renderModalGallery(p) {
         if (gallery.length > 1) {
             thumbsEl.innerHTML = gallery.map((img, i) => `
                 <img class="pm-thumb ${i === 0 ? "active" : ""}"
-                     src="${esc(img.url)}" alt="${esc(img.alt || p.title)}"
-                     loading="lazy" data-idx="${i}"
+                     src="${esc(resolveImageUrl(img.url))}" alt="${esc(img.alt || p.title)}"
+                     loading="lazy" decoding="async" data-idx="${i}"
                      onerror="this.style.display='none'" />`
             ).join("");
 
@@ -711,7 +712,7 @@ function openFullscreenViewer(gallery, startIdx = 0, title = "") {
         const item = gallery[idx];
         fsImg.style.opacity = "0";
         setTimeout(() => {
-            fsImg.src = _imageCache[item.url] || item.url;
+            fsImg.src = resolveImageUrl(item.url);
             fsImg.alt = item.alt || title;
             fsImg.style.opacity = "1";
         }, 120);
@@ -728,9 +729,9 @@ function openFullscreenViewer(gallery, startIdx = 0, title = "") {
         if (gallery.length > 1) {
             fsThumbsEl.innerHTML = gallery.map((img, i) => `
                 <img class="fs-thumb ${i === startIdx ? "active" : ""}"
-                     src="${esc(_imageCache[img.url] || img.url)}"
+                     src="${esc(resolveImageUrl(img.url))}"
                      alt="${esc(img.alt || title)}"
-                     data-idx="${i}" loading="lazy"
+                     data-idx="${i}" loading="lazy" decoding="async"
                      onerror="this.style.display='none'" />`
             ).join("");
             fsThumbsEl.querySelectorAll(".fs-thumb").forEach(t => {

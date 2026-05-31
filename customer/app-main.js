@@ -5,6 +5,7 @@ import {
     getShopSettings,
     getWhatsAppNumberSync,
     safeTrackPageView,
+    startNewProductSync,
     startLiveSync,
     stopLiveSync,
     updateLocalProductsCache
@@ -36,6 +37,7 @@ import {
 } from "./app-popup.js?v=2";
 
 const ENABLE_CUSTOMER_LIVE_SYNC = false;
+const ENABLE_CUSTOMER_NEW_PRODUCT_SYNC = true;
 
 // ══════════════════════════════════════════
 //  BOOTSTRAP
@@ -109,29 +111,34 @@ document.addEventListener("DOMContentLoaded", async () => {
     // For deleted products:  removed from UI immediately.
     // Static fast mode avoids downloading large Firebase image payloads on customer pages.
     if (!ENABLE_CUSTOMER_LIVE_SYNC) {
-        console.log("[main] Static fast mode: product live sync disabled");
+        if (ENABLE_CUSTOMER_NEW_PRODUCT_SYNC) {
+            startNewProductSync(handleProductUpdate);
+        }
+        console.log("[main] Static fast mode: full product live sync disabled");
         return;
     }
 
-    startLiveSync((freshProducts) => {
-        // Update in-memory cache
-        updateLocalProductsCache(freshProducts);
-
-        // Re-render UI
-        setProducts(freshProducts);
-        renderCategoryChips(freshProducts);
-
-        const anyOpen = document.querySelector(".modal-overlay:not(.hidden), .popup-overlay:not(.hidden)");
-        if (anyOpen) {
-            applyFiltersAndRender(true);
-        } else {
-            applyFiltersAndRender(false);
-            renderFeatured();
-        }
-
-        console.log(`[main] 🔄 Live sync: ${freshProducts.length} products updated`);
-    });
+    startLiveSync(handleProductUpdate);
 });
+
+function handleProductUpdate(freshProducts) {
+    // Update in-memory cache
+    updateLocalProductsCache(freshProducts);
+
+    // Re-render UI
+    setProducts(freshProducts);
+    renderCategoryChips(freshProducts);
+
+    const anyOpen = document.querySelector(".modal-overlay:not(.hidden), .popup-overlay:not(.hidden)");
+    if (anyOpen) {
+        applyFiltersAndRender(true);
+    } else {
+        applyFiltersAndRender(false);
+        renderFeatured();
+    }
+
+    console.log("[main] Product sync:", freshProducts.length, "products available");
+}
 
 // ══════════════════════════════════════════
 //  FULLSCREEN (MOBILE APP EXPERIENCE)

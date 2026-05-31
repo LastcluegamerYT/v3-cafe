@@ -20,6 +20,7 @@ import {
 // ── Local-first data system ──────────────────────────────────────
 import {
     loadLocalProducts,
+    startNewProductSync,
     startLiveSync,
     stopLiveSync,
     getLiveProducts,
@@ -40,6 +41,7 @@ export {
     shouldShowLeadPopup,
     markLeadPopupSeen,
     // Local-data system
+    startNewProductSync,
     startLiveSync,
     stopLiveSync,
     getLiveProducts,

@@ -30,12 +30,14 @@
 const LOCAL_DATA_BASE = "../firebase_data";
 const LOCAL_JSON_URL  = `${LOCAL_DATA_BASE}/processed_json/products.json`;
 const LOCAL_IMG_BASE  = `${LOCAL_DATA_BASE}/images`;
+const FIREBASE_PRODUCTS_REST_URL = "https://project-store-44fff-default-rtdb.asia-southeast1.firebasedatabase.app/products";
 
 // ── In-memory state ──────────────────────────────────────────────
 let _localProducts  = null;   // Products from local JSON (snapshot)
 let _liveProducts   = null;   // Live merged products (local + Firebase)
 let _localProductIds = new Set(); // IDs we have locally (for image routing)
 let _changeListeners = [];    // Callbacks registered externally
+let _newProductTimer = null;
 
 // ────────────────────────────────────────────────────────────────
 //  STEP 1 — Load local snapshot (instant, static file)
@@ -141,7 +143,83 @@ export function stopLiveSync() {
         _unsubscribe();
         _unsubscribe = null;
     }
+    stopNewProductSync();
     _changeListeners = [];
+}
+
+/**
+ * Fast customer sync: checks only Firebase product keys, then fetches only
+ * products missing from the static snapshot. This lets new admin products
+ * appear without downloading the full Firebase products tree.
+ */
+export function startNewProductSync(onUpdate, { intervalMs = 60_000 } = {}) {
+    if (typeof onUpdate === "function") {
+        _changeListeners.push(onUpdate);
+    }
+    if (_newProductTimer) return;
+
+    const run = () => {
+        _syncMissingProducts().catch(err => {
+            console.warn("[local-data] New product sync skipped:", err.message);
+        });
+    };
+
+    const start = () => {
+        run();
+        _newProductTimer = setInterval(run, intervalMs);
+    };
+
+    if ("requestIdleCallback" in window) {
+        requestIdleCallback(start, { timeout: 5000 });
+    } else {
+        setTimeout(start, 2000);
+    }
+}
+
+export function stopNewProductSync() {
+    if (_newProductTimer) {
+        clearInterval(_newProductTimer);
+        _newProductTimer = null;
+    }
+}
+
+async function _syncMissingProducts() {
+    if (!_localProducts) await loadLocalProducts();
+
+    const keyResp = await fetch(`${FIREBASE_PRODUCTS_REST_URL}.json?shallow=true`, {
+        cache: "no-store",
+    });
+    if (!keyResp.ok) throw new Error(`key check HTTP ${keyResp.status}`);
+
+    const keyMap = await keyResp.json();
+    if (!keyMap || typeof keyMap !== "object") return;
+
+    const currentIds = new Set((_liveProducts || _localProducts || []).map(p => p.id));
+    const missingIds = Object.keys(keyMap).filter(id => id && !currentIds.has(id));
+    if (!missingIds.length) return;
+
+    const fetched = await Promise.all(missingIds.map(async id => {
+        const resp = await fetch(`${FIREBASE_PRODUCTS_REST_URL}/${encodeURIComponent(id)}.json`, {
+            cache: "no-store",
+        });
+        if (!resp.ok) return null;
+        const raw = await resp.json();
+        if (!raw || typeof raw !== "object") return null;
+        return _stripEmbeddedImages(_normalizeFirebaseProduct(raw, id));
+    }));
+
+    const additions = fetched.filter(Boolean);
+    if (!additions.length) return;
+
+    _liveProducts = _sortProducts([
+        ...(_liveProducts || _localProducts || []),
+        ...additions.map(p => ({
+            ...p,
+            _hasLocalImages: false,
+            _isNewProduct: true,
+        })),
+    ]);
+    _notifyListeners(_liveProducts);
 }
 
 /**
@@ -282,6 +360,16 @@ function _normalizeImages(images) {
         })
         .filter(img => img && img.url)
         .sort((a, b) => a.order - b.order);
+}
+
+function _stripEmbeddedImages(product) {
+    const isEmbedded = url => typeof url === "string" && url.startsWith("data:");
+    const images = (product.images || []).filter(img => !isEmbedded(img.url));
+    return {
+        ...product,
+        mainImage: isEmbedded(product.mainImage) ? (images[0]?.url || "") : product.mainImage,
+        images,
+    };
 }
 
 function _getFirebaseImageUrls(images) {

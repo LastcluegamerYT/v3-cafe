@@ -48,6 +48,35 @@
   [headers.values]
     Cache-Control = "public, max-age=300, must-revalidate"
 
+# ── LOCAL PRODUCT IMAGE CDN ──────────────────────────────────────────────────
+# Images downloaded from Firebase into firebase_data/images/ are static files.
+# Filenames are keyed by product ID + index number → IMMUTABLE for that filename.
+# Cache for 1 year. Browser always serves from disk — blazing fast.
+[[headers]]
+  for = "/firebase_data/images/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# The products.json is updated each time you re-run download_firebase.js.
+# Short cache (5 min) so the refreshed JSON is picked up quickly on next visit.
+[[headers]]
+  for = "/firebase_data/processed_json/*"
+  [headers.values]
+    Cache-Control = "public, max-age=300, must-revalidate"
+
+# Raw JSON and summary — no need to cache aggressively
+[[headers]]
+  for = "/firebase_data/raw_json/*"
+  [headers.values]
+    Cache-Control = "public, max-age=300, must-revalidate"
+
+# Block the Node.js downloader script from being indexed / served as a page
+[[headers]]
+  for = "/firebase_data/download_firebase.js"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+    Cache-Control = "no-store"
+
 # Enable Netlify's Asset Optimization (Minify CSS, JS, Images)
 [build.processing]
   skip_processing = false

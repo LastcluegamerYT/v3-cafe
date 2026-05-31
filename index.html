@@ -338,95 +338,64 @@
   </div>
 
   <script type="module">
-    import { db, getAllProducts } from "./connection/connection.js";
+    import { db } from "./connection/connection.js";
     import { ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-    // ── BACKGROUND PREFETCHING ──
-    // While the 2-second splash screen runs, we aggressively fetch all data
-    // and cache it so the main app loads with ZERO delay.
+    // ════════════════════════════════════════════════════════
+    //  LOCAL-FIRST PREFETCH
+    //  Strategy: warm the browser HTTP cache from LOCAL files,
+    //  so the customer page opens instantly with zero Firebase wait.
+    //  Firebase still handles live sync in the background.
+    // ════════════════════════════════════════════════════════
     async function prefetchData() {
       try {
-        // 1. Fetch & Cache Settings
+        // 1. Always refresh shop settings from Firebase (tiny payload, fast)
         get(ref(db, "settings/shop")).then(snap => {
           if (snap.exists()) {
             localStorage.setItem("v3_shopSettings", JSON.stringify(snap.val()));
           }
-        }).catch(() => { });
+        }).catch(() => {});
 
-        // 2. Fetch & Cache Products
-        const products = await getAllProducts({ force: true });
-        if (products && products.length > 0) {
-          try {
-            localStorage.setItem("v3_allProducts", JSON.stringify({
-              data: products,
-              time: Date.now()
-            }));
-          } catch (e) {
-            if (e.name === 'QuotaExceededError') {
-              localStorage.removeItem("v3_image_cache");
-              try { localStorage.setItem("v3_allProducts", JSON.stringify({ data: products, time: Date.now() })); } catch (e2) {}
-            }
-          }
+        // 2. Load local products JSON — warm the HTTP cache
+        //    (browser caches this file after 1st fetch; future visits = instant)
+        const resp = await fetch("firebase_data/processed_json/products.json", { cache: "default" });
+        if (!resp.ok) throw new Error("local json fetch failed");
 
-          // 3. Pre-download all main images into browser HTTP cache & LocalStorage
-          const imageCache = JSON.parse(localStorage.getItem("v3_image_cache") || "{}");
+        const productsObj = await resp.json();
+        const products = Object.values(productsObj).filter(Boolean);
 
-          // --- Garbage Collection (Prevent 5MB crash) ---
-          // Gather all current valid image URLs
-          const currentUrls = products.map(p => p.image || p.mainImage).filter(Boolean);
-          let cacheChanged = false;
+        if (products.length === 0) return;
 
-          // Delete any cached Base64 that is no longer in the active products list
-          for (const cachedUrl in imageCache) {
-            if (!currentUrls.includes(cachedUrl)) {
-              delete imageCache[cachedUrl];
-              cacheChanged = true;
-            }
-          }
-          if (cacheChanged) {
-            try { localStorage.setItem("v3_image_cache", JSON.stringify(imageCache)); } catch (e) { }
-          }
-          // ----------------------------------------------
+        // 3. Preload all local main images into browser HTTP cache
+        //    We just create Image objects — the browser caches them via HTTP cache headers.
+        //    NO localStorage / base64 needed: images are local static files!
+        let loaded = 0;
+        products.forEach(p => {
+          const relPath = p.mainImage || "";
+          if (!relPath) return;
 
-          products.forEach(p => {
-            const imgUrl = p.image || p.mainImage;
-            if (imgUrl) {
-              const img = new Image();
-              img.crossOrigin = "Anonymous"; // Required for Canvas export
-              img.src = imgUrl;
+          // Resolve relative path: JSON has "./images/xxx.webp"
+          // From root: firebase_data/images/xxx.webp
+          const src = relPath.startsWith("./images/")
+            ? "firebase_data/images/" + relPath.replace("./images/", "")
+            : relPath;
 
-              // Save to LocalStorage as High-Quality Base64 (Using URL as key so updates work!)
-              if (!imageCache[imgUrl]) {
-                img.onload = () => {
-                  try {
-                    const canvas = document.createElement("canvas");
-                    const ctx = canvas.getContext("2d");
-                    const max = 400; // Increased size for High Quality (Best)
-                    let w = img.width, h = img.height;
-                    if (w > max || h > max) {
-                      if (w > h) { h = Math.round(h * max / w); w = max; }
-                      else { w = Math.round(w * max / h); h = max; }
-                    }
-                    canvas.width = w; canvas.height = h;
-                    ctx.drawImage(img, 0, 0, w, h);
+          if (src.startsWith("http")) return; // Skip remote URLs
 
-                    // Use WebP for best quality/size ratio
-                    imageCache[imgUrl] = canvas.toDataURL("image/webp", 0.92);
-                    localStorage.setItem("v3_image_cache", JSON.stringify(imageCache));
-                  } catch (e) {
-                    // CORS or Quota error: Silent fail, HTTP cache still works
-                  }
-                };
-              }
-            }
-          });
-        }
+          const img = new Image();
+          img.src = src;
+          img.onload = () => { loaded++; };
+        });
+
+        console.log(`[splash] Preloaded ${products.length} local product images`);
+
       } catch (e) {
-        console.warn("Prefetch skipped (will load normally):", e);
+        // Silent fallback — customer page will load products from Firebase directly
+        console.warn("[splash] Local prefetch skipped:", e.message);
       }
     }
 
-    // Start prefetch immediately
+    // Start prefetch immediately (runs during the 2-second splash animation)
     prefetchData();
 
     // ── SPLASH SCREEN ANIMATION & REDIRECT ──

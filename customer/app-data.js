@@ -1,15 +1,9 @@
 // app-data.js — All Firebase / data operations for customer panel
 // Uses NAMED exports from connection.js (not just the default object)
+// ── HYBRID MODE: local firebase_data/ snapshot + Firebase live sync ──
 
 import {
     db,
-    getAllProducts,
-    getFeaturedProducts,
-    getProductById,
-    getProductBySlug,
-    getProductForRoute,
-    getProductsByCategory,
-    searchProducts,
     addLead,
     trackPageView,
     trackInterest,
@@ -18,22 +12,22 @@ import {
     buildWhatsAppUrl,
     buildShareLink,
     buildProductDetail,
-    subscribeProducts,
     subscribeLeads,
     shouldShowLeadPopup,
     markLeadPopupSeen
 } from "../connection/connection.js?v=2";
 
+// ── Local-first data system ──────────────────────────────────────
+import {
+    loadLocalProducts,
+    startLiveSync,
+    stopLiveSync,
+    getLiveProducts,
+} from "./app-local-data.js";
+
 // Re-export what other modules need
 export {
     db,
-    getAllProducts,
-    getFeaturedProducts,
-    getProductById,
-    getProductBySlug,
-    getProductForRoute,
-    getProductsByCategory,
-    searchProducts,
     addLead,
     trackPageView,
     trackInterest,
@@ -42,10 +36,13 @@ export {
     buildWhatsAppUrl,
     buildShareLink,
     buildProductDetail,
-    subscribeProducts,
     subscribeLeads,
     shouldShowLeadPopup,
-    markLeadPopupSeen
+    markLeadPopupSeen,
+    // Local-data system
+    startLiveSync,
+    stopLiveSync,
+    getLiveProducts,
 };
 
 // ══════════════════════════════════════════
@@ -61,7 +58,9 @@ export async function getShopSettings() {
     if (_settingsFetched) return _shopSettings || {};
     
     // 1. Try to load from localStorage first (Instant Load)
-    const cachedStr = localStorage.getItem("v3_shopSettings");
+    let cachedStr = null;
+    try { cachedStr = localStorage.getItem("v3_shopSettings"); } catch(e) {}
+    
     if (cachedStr) {
         try {
             _shopSettings = JSON.parse(cachedStr);
@@ -72,7 +71,7 @@ export async function getShopSettings() {
             // 2. Silently fetch from Firebase in background to keep cache fresh for next visit
             get(ref(db, "settings/shop")).then(snap => {
                 if (snap.exists()) {
-                    localStorage.setItem("v3_shopSettings", JSON.stringify(snap.val()));
+                    try { localStorage.setItem("v3_shopSettings", JSON.stringify(snap.val())); } catch(e) {}
                 }
             }).catch(() => {});
             
@@ -84,7 +83,7 @@ export async function getShopSettings() {
     try {
         const snap = await get(ref(db, "settings/shop"));
         _shopSettings = snap.exists() ? snap.val() : {};
-        localStorage.setItem("v3_shopSettings", JSON.stringify(_shopSettings));
+        try { localStorage.setItem("v3_shopSettings", JSON.stringify(_shopSettings)); } catch(e) {}
     } catch (_) {
         _shopSettings = {};
     }
@@ -115,63 +114,58 @@ export function getWhatsAppNumberSync() {
 }
 
 // ══════════════════════════════════════════
-//  PRODUCTS — cached layer
+//  PRODUCTS — hybrid local-first layer
 // ══════════════════════════════════════════
-let _allProducts = null;
+let _allProducts = null; // in-memory cache
 
+/**
+ * Load products with INSTANT local-first strategy:
+ *  1. Load from /firebase_data/processed_json/products.json (static file, fast)
+ *  2. If local fails, fallback to Firebase
+ *
+ * After this call, startLiveSync() (called in app-main.js) keeps data updated.
+ */
 export async function fetchAllProducts(force = false) {
     if (_allProducts && !force) return _allProducts;
 
-    // 1. Check localStorage (Instant Load) — but only if data is < 24h old (Bug 8 fix)
-    if (!_allProducts) {
-        const cachedStr = localStorage.getItem("v3_allProducts");
-        if (cachedStr) {
-            try {
-                const parsed = JSON.parse(cachedStr);
-                const AGE_MS = Date.now() - (parsed.time || 0);
-                const MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
-                if (parsed.data && AGE_MS < MAX_AGE) {
-                    _allProducts = parsed.data;
-                    return _allProducts;
-                }
-                // Cache is too old — fall through to Firebase fetch
-            } catch (e) {}
+    // ── Priority 1: Local static JSON (instant — no Firebase latency) ──
+    try {
+        const localProducts = await loadLocalProducts();
+        if (localProducts && localProducts.length > 0) {
+            _allProducts = localProducts;
+            console.log(`[data] ✅ Loaded ${localProducts.length} products from local cache (fast)`); 
+            return _allProducts.slice();
         }
+    } catch (e) {
+        console.warn("[data] Local load failed, falling back to Firebase:", e.message);
     }
 
-    // 2. Fallback: Fetch directly from Firebase if no local cache exists
+    // ── Priority 2: Firebase direct fetch (fallback when local not available) ──
     try {
+        const { getAllProducts } = await import("../connection/connection.js");
         _allProducts = await getAllProducts({ force: true });
-        try {
-            localStorage.setItem("v3_allProducts", JSON.stringify({ data: _allProducts, time: Date.now() }));
-        } catch (e) {
-            if (e.name === 'QuotaExceededError') {
-                localStorage.removeItem("v3_image_cache"); // Free up space!
-                try { localStorage.setItem("v3_allProducts", JSON.stringify({ data: _allProducts, time: Date.now() })); } catch(err){}
-            }
-        }
-        return _allProducts;
+        console.log(`[data] 🔥 Loaded ${_allProducts.length} products from Firebase (fallback)`);
+        return _allProducts.slice();
     } catch (err) {
-        console.error("[data] fetchAllProducts:", err);
+        console.error("[data] fetchAllProducts Firebase fallback failed:", err);
         return _allProducts || [];
     }
 }
 
+/**
+ * Called by the live sync when Firebase sends updated data.
+ * Updates in-memory cache and re-renders the UI.
+ */
 export function updateLocalProductsCache(freshProducts) {
     _allProducts = freshProducts;
-    try {
-        localStorage.setItem("v3_allProducts", JSON.stringify({ data: freshProducts, time: Date.now() }));
-    } catch (e) {
-        if (e.name === 'QuotaExceededError') {
-            localStorage.removeItem("v3_image_cache");
-            try { localStorage.setItem("v3_allProducts", JSON.stringify({ data: freshProducts, time: Date.now() })); } catch(err){}
-        }
-    }
+    // Note: we do NOT write to localStorage anymore since local static files
+    // are the source of truth for images. Firebase handles live metadata.
 }
 
 export async function fetchFeatured(limit = 6) {
     try {
-        const all = await fetchAllProducts();
+        // Use getLiveProducts() for the most current merged data (local + Firebase)
+        const all = getLiveProducts().length > 0 ? getLiveProducts() : await fetchAllProducts();
         return all.filter(p => p.featured && p.status !== "deleted").slice(0, limit);
     } catch (err) {
         console.error("[data] fetchFeatured:", err);
@@ -182,14 +176,23 @@ export async function fetchFeatured(limit = 6) {
 export async function fetchProductDetail(idOrSlug) {
     if (!idOrSlug) return null;
     try {
-        // Try cache first
+        // 1. Check live products first (most up-to-date)
+        const live = getLiveProducts();
+        if (live.length > 0) {
+            const found = live.find(p => p.id === idOrSlug || p.slug === idOrSlug);
+            if (found) return found;
+        }
+        // 2. Check local cache
         if (_allProducts) {
             const cached = _allProducts.find(p => p.id === idOrSlug || p.slug === idOrSlug);
             if (cached) return cached;
         }
-        // Fall back to Firebase
-        return await getProductForRoute({ slug: idOrSlug }) ||
-               await getProductForRoute({ id: idOrSlug });
+        // 3. Fallback: dynamic import from Firebase
+        try {
+            const { getProductForRoute } = await import("../connection/connection.js");
+            return await getProductForRoute({ slug: idOrSlug }) ||
+                   await getProductForRoute({ id: idOrSlug });
+        } catch (_) { return null; }
     } catch (err) {
         console.error("[data] fetchProductDetail:", err);
         return null;
@@ -199,7 +202,7 @@ export async function fetchProductDetail(idOrSlug) {
 export async function fetchByCategory(category) {
     if (!category || category === "all") return fetchAllProducts();
     try {
-        const all = await fetchAllProducts();
+        const all = getLiveProducts().length > 0 ? getLiveProducts() : await fetchAllProducts();
         return all.filter(p => (p.category || "").toLowerCase() === category.toLowerCase());
     } catch (err) {
         console.error("[data] fetchByCategory:", err);

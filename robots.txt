@@ -1,3 +1,11 @@
 User-agent: *
 Allow: /
+
+# Block sensitive data folders from search engines
+Disallow: /firebase_data/raw_json/
+Disallow: /firebase_data/summary.json
+Disallow: /firebase_data/report.txt
+Disallow: /firebase_data/download_firebase.js
+Disallow: /admin/
+
 Sitemap: https://v3-cafe.netlify.app/sitemap.xml

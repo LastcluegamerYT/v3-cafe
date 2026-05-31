@@ -1,0 +1,56 @@
+{
+  "visit_2bdcd580f2ab423680342aebf08a768b": {
+    "createdAt": 1779883925104,
+    "id": "visit_2bdcd580f2ab423680342aebf08a768b",
+    "path": "/customer/index.html",
+    "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Mobile Safari/537.36"
+  },
+  "visit_71886f48d0be4bf6ab03c4daa06d7239": {
+    "createdAt": 1779874808249,
+    "id": "visit_71886f48d0be4bf6ab03c4daa06d7239",
+    "path": "/customer/index.html",
+    "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Mobile Safari/537.36"
+  },
+  "visit_80482fe8b4b147afa115267f36066920": {
+    "createdAt": 1780215628779,
+    "id": "visit_80482fe8b4b147afa115267f36066920",
+    "path": "/customer/index.html",
+    "userAgent": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Mobile Safari/537.36"
+  },
+  "visit_9b1bc80d18e84959853ffe11d1508a5d": {
+    "createdAt": 1779883889638,
+    "id": "visit_9b1bc80d18e84959853ffe11d1508a5d",
+    "path": "/customer/index.html",
+    "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Mobile Safari/537.36"
+  },
+  "visit_a3b479278aae4a47abb7a7619db5e076": {
+    "createdAt": 1780215623779,
+    "id": "visit_a3b479278aae4a47abb7a7619db5e076",
+    "path": "/customer/index.html",
+    "userAgent": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Mobile Safari/537.36"
+  },
+  "visit_ac7ff0b4157b48d39e70c2055d3d290a": {
+    "createdAt": 1779879587151,
+    "id": "visit_ac7ff0b4157b48d39e70c2055d3d290a",
+    "path": "/customer/index.html",
+    "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Mobile Safari/537.36"
+  },
+  "visit_bf433a84e8ca4ab4b97a67fe0e27b847": {
+    "createdAt": 1779865488865,
+    "id": "visit_bf433a84e8ca4ab4b97a67fe0e27b847",
+    "path": "/customer/index.html",
+    "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Mobile Safari/537.36"
+  },
+  "visit_c41bf2d7b0d24c91bf0c5f09ab503a0a": {
+    "createdAt": 1780215531280,
+    "id": "visit_c41bf2d7b0d24c91bf0c5f09ab503a0a",
+    "path": "/customer/index.html",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+  },
+  "visit_fc1657aa4b8c4c9497f687e184ba74e7": {
+    "createdAt": 1780215497820,
+    "id": "visit_fc1657aa4b8c4c9497f687e184ba74e7",
+    "path": "/customer/index.html",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+  }
+}

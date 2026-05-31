@@ -5,7 +5,8 @@ import {
     getShopSettings,
     getWhatsAppNumberSync,
     safeTrackPageView,
-    subscribeProducts,
+    startLiveSync,
+    stopLiveSync,
     updateLocalProductsCache
 } from "./app-data.js?v=2";
 
@@ -84,33 +85,43 @@ document.addEventListener("DOMContentLoaded", async () => {
     // initLeadPopup(); // PAUSED per user request
 
     // Cleanup on unload
-    window.addEventListener("beforeunload", cleanupPopup);
+    window.addEventListener("beforeunload", () => {
+        stopLiveSync(); // Cleanly disconnect Firebase listener
+        cleanupPopup();
+    });
 
-    // Debounced hashchange so rapid back/forward presses don’t stack modal opens
+    // Debounced hashchange so rapid back/forward presses don't stack modal opens
     let _hashTimer;
     window.addEventListener("hashchange", () => {
         clearTimeout(_hashTimer);
         _hashTimer = setTimeout(handleHashNavigation, 80);
     });
 
-    // Background Reactivity (Real-Time Subscription)
-    // Listens directly to Firebase. If admin adds/edits a product, UI updates instantly!
-    subscribeProducts((freshProducts) => {
-        // Update both the in-memory cache (_allProducts) and localStorage so next reload is instant
+    // ── LIVE SYNC (Hybrid Local + Firebase) ──────────────────────────────────
+    // Registers a Firebase onValue listener. Whenever the admin changes anything
+    // (price, name, image, availability, new product, deleted product),
+    // Firebase fires and we instantly merge + re-render the UI.
+    //
+    // For existing products: local images are kept (fast), only metadata updates.
+    // For new products:      Firebase URLs are used directly.
+    // For deleted products:  removed from UI immediately.
+    startLiveSync((freshProducts) => {
+        // Update in-memory cache
         updateLocalProductsCache(freshProducts);
 
-        // Update UI instantly (pass true to avoid interrupting modals)
+        // Re-render UI
         setProducts(freshProducts);
         renderCategoryChips(freshProducts);
 
         const anyOpen = document.querySelector(".modal-overlay:not(.hidden), .popup-overlay:not(.hidden)");
         if (anyOpen) {
-            // ApplyFiltersAndRender handles pending Render logic
             applyFiltersAndRender(true);
         } else {
             applyFiltersAndRender(false);
             renderFeatured();
         }
+
+        console.log(`[main] 🔄 Live sync: ${freshProducts.length} products updated`);
     });
 });
 

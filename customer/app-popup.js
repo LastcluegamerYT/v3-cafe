@@ -20,10 +20,13 @@ let _popupShown  = false;
 let _exitBound   = false;
 
 export function initLeadPopup() {
+    return; // PAUSED per user request (will not show lead popup or bind exit intent)
     // Don't show if already submitted / dismissed
     if (!shouldShowLeadPopup()) return;
     // Don't show if dismissed this session
-    if (sessionStorage.getItem("v3cafe_popup_dismissed")) return;
+    let dismissed = false;
+    try { dismissed = sessionStorage.getItem("v3cafe_popup_dismissed") === "1"; } catch(e) {}
+    if (dismissed) return;
 
     _popupTimer = setTimeout(() => {
         if (!_popupShown) showLeadPopup();
@@ -37,8 +40,9 @@ export function initLeadPopup() {
 }
 
 function _exitIntentHandler(e) {
-    if (e.clientY <= 5 && !_popupShown && shouldShowLeadPopup()
-        && !sessionStorage.getItem("v3cafe_popup_dismissed")) {
+    let dismissed = false;
+    try { dismissed = sessionStorage.getItem("v3cafe_popup_dismissed") === "1"; } catch(e) {}
+    if (e.clientY <= 5 && !_popupShown && shouldShowLeadPopup() && !dismissed) {
         clearTimeout(_popupTimer);
         showLeadPopup();
     }
@@ -72,7 +76,7 @@ export function initLeadForm() {
 
     function dismissPopup() {
         closeModal("lead-popup");
-        sessionStorage.setItem("v3cafe_popup_dismissed", "1");
+        try { sessionStorage.setItem("v3cafe_popup_dismissed", "1"); } catch(e) {}
     }
 
     closeBtn?.addEventListener("click", dismissPopup);

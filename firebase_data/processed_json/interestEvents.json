@@ -1,0 +1,98 @@
+{
+  "interest_14d84f5bc21f45af9a80c0aeeaa0d27b": {
+    "createdAt": 1777031712065,
+    "id": "interest_14d84f5bc21f45af9a80c0aeeaa0d27b",
+    "page": "/customer/index.html",
+    "phone": "",
+    "productId": "prod_84cc2a0950d04ee6877771f03c747f98",
+    "type": "order_click"
+  },
+  "interest_42e09a5b0c3945d7b8b1020117acaffb": {
+    "createdAt": 1777260614541,
+    "id": "interest_42e09a5b0c3945d7b8b1020117acaffb",
+    "page": "/customer/index.html",
+    "phone": "9888989006",
+    "productId": "",
+    "type": "popup"
+  },
+  "interest_5e579fc71a6744809269dca8f878174b": {
+    "createdAt": 1777077382637,
+    "id": "interest_5e579fc71a6744809269dca8f878174b",
+    "page": "/customer/index.html",
+    "phone": "",
+    "productId": "prod_84cc2a0950d04ee6877771f03c747f98",
+    "type": "order_click"
+  },
+  "interest_69d14ae3267446a5b1e1f40cc33820a1": {
+    "createdAt": 1777078421849,
+    "id": "interest_69d14ae3267446a5b1e1f40cc33820a1",
+    "page": "/customer/",
+    "phone": "",
+    "productId": "prod_84cc2a0950d04ee6877771f03c747f98",
+    "type": "order_click"
+  },
+  "interest_ad8525336c3f4f1eb677d50bd27ff81e": {
+    "createdAt": 1777077880134,
+    "id": "interest_ad8525336c3f4f1eb677d50bd27ff81e",
+    "page": "/customer/",
+    "phone": "",
+    "productId": "prod_84cc2a0950d04ee6877771f03c747f98",
+    "type": "order_click"
+  },
+  "interest_c2a128cf07fe46c69e537bc1cda84971": {
+    "createdAt": 1777033665492,
+    "id": "interest_c2a128cf07fe46c69e537bc1cda84971",
+    "page": "/customer/index.html",
+    "phone": "",
+    "productId": "prod_84cc2a0950d04ee6877771f03c747f98",
+    "type": "order_click"
+  },
+  "interest_d399ec430fec48f683c7035d9f6f94d9": {
+    "createdAt": 1777032144555,
+    "id": "interest_d399ec430fec48f683c7035d9f6f94d9",
+    "page": "/customer/index.html",
+    "phone": "",
+    "productId": "prod_84cc2a0950d04ee6877771f03c747f98",
+    "type": "order_click"
+  },
+  "interest_de3d2674aa2b4612913337ccc047a66b": {
+    "createdAt": 1777032127919,
+    "id": "interest_de3d2674aa2b4612913337ccc047a66b",
+    "page": "/customer/index.html",
+    "phone": "",
+    "productId": "prod_84cc2a0950d04ee6877771f03c747f98",
+    "type": "order_click"
+  },
+  "interest_e82c11de12fa49e899667b604696492e": {
+    "createdAt": 1777032120057,
+    "id": "interest_e82c11de12fa49e899667b604696492e",
+    "page": "/customer/index.html",
+    "phone": "9814897633",
+    "productId": "",
+    "type": "popup"
+  },
+  "interest_f15eb8e5d1b34c78864f1c2eafb4e22a": {
+    "createdAt": 1777033837749,
+    "id": "interest_f15eb8e5d1b34c78864f1c2eafb4e22a",
+    "page": "/customer/index.html",
+    "phone": "",
+    "productId": "prod_84cc2a0950d04ee6877771f03c747f98",
+    "type": "order_click"
+  },
+  "interest_fb5cf46c5aa147cfb43ffd8341c7447f": {
+    "createdAt": 1777034000221,
+    "id": "interest_fb5cf46c5aa147cfb43ffd8341c7447f",
+    "page": "/customer/index.html",
+    "phone": "",
+    "productId": "prod_84cc2a0950d04ee6877771f03c747f98",
+    "type": "order_click"
+  },
+  "interest_fe4c97cfb78d49b8b25fb0d6fd5df56d": {
+    "createdAt": 1777077481391,
+    "id": "interest_fe4c97cfb78d49b8b25fb0d6fd5df56d",
+    "page": "/customer/index.html",
+    "phone": "",
+    "productId": "prod_84cc2a0950d04ee6877771f03c747f98",
+    "type": "order_click"
+  }
+}

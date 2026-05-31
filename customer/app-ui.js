@@ -781,7 +781,7 @@ function openFullscreenViewer(gallery, startIdx = 0, title = "") {
     viewer.addEventListener("touchstart", (e) => { 
         if (e.touches.length === 2) {
             _baseDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-            if (fsMainImgEl) fsMainImgEl.style.transition = "none";
+            if (fsImg) fsImg.style.transition = "none";
         } else if (e.touches.length === 1) {
             _touchStartX = e.touches[0].clientX; 
         }
@@ -792,7 +792,7 @@ function openFullscreenViewer(gallery, startIdx = 0, title = "") {
             if (e.cancelable) e.preventDefault(); // Prevent browser zooming/scrolling
             const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
             _scale = Math.max(1, Math.min(4, dist / _baseDist)); // Max 4x zoom
-            if (fsMainImgEl) fsMainImgEl.style.transform = `scale(${_scale})`;
+            if (fsImg) fsImg.style.transform = `scale(${_scale})`;
         }
     }, { passive: false, signal: ac.signal }); // MUST be passive: false to allow preventDefault()
 
@@ -801,9 +801,9 @@ function openFullscreenViewer(gallery, startIdx = 0, title = "") {
             // Reset zoom when pinch ends
             _baseDist = 0;
             _scale = 1;
-            if (fsMainImgEl) {
-                fsMainImgEl.style.transition = "transform 0.25s cubic-bezier(0.25, 1, 0.5, 1)";
-                fsMainImgEl.style.transform = "scale(1)";
+            if (fsImg) {
+                fsImg.style.transition = "transform 0.25s cubic-bezier(0.25, 1, 0.5, 1)";
+                fsImg.style.transform = "scale(1)";
             }
         }
         

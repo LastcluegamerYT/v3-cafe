@@ -8,6 +8,13 @@
 # /admin/CODE → rewrite to admin panel (JS will verify the code)
 /admin/*        /admin/index.html   200
 
+# ── Security Guards (defense in depth) ──
+# Block direct web access to sensitive raw data dumps, reports, and internal download script
+/firebase_data/raw_json/*              /    404
+/firebase_data/summary.json            /    404
+/firebase_data/report.txt              /    404
+/firebase_data/download_firebase.js    /    404
+
 # ── Customer page routes ──
 # Root is handled by /index.html (splash page)
 # /customer/* is served directly as static files (no rewrite needed)

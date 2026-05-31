@@ -13,6 +13,9 @@ desktop.ini
 *.swp
 *.swo
 
+# Local Netlify CLI state
+.netlify/
+
 # Logs
 *.log
 
@@ -24,3 +27,14 @@ desktop.ini
 .env
 .env.local
 .env.production
+
+# ── Firebase Data — SELECTIVE IGNORE ────────────────────────────────────────
+#
+# DO commit (needed for deployment):
+#   firebase_data/images/          ← local product images (CDN)
+#   firebase_data/processed_json/  ← products.json (local-first data)
+#
+# DO NOT commit (sensitive data: leads, visitor IPs, analytics):
+firebase_data/raw_json/
+firebase_data/summary.json
+firebase_data/report.txt

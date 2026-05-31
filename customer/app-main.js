@@ -3,10 +3,13 @@
 import {
     fetchAllProducts,
     getShopSettings,
+    getShopTemplates,
     getWhatsAppNumberSync,
     safeTrackPageView,
+    startCustomerSettingsSync,
     startNewProductSync,
     startLiveSync,
+    stopCustomerSettingsSync,
     stopLiveSync,
     updateLocalProductsCache
 } from "./app-data.js?v=2";
@@ -69,12 +72,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const [settings, products] = await Promise.all([
         getShopSettings(),
+        getShopTemplates(),
         fetchAllProducts()
-    ]);
+    ]).then(([shopSettings, _templates, productList]) => [shopSettings, productList]);
 
     // 5. Apply shop settings to DOM
     // getWhatsAppNumberSync() is safe here — getShopSettings() just ran above and cached it
     applyShopSettings(settings, getWhatsAppNumberSync());
+    startCustomerSettingsSync(applyShopSettings);
 
     // 6. Populate product UI
     setProducts(products);
@@ -91,6 +96,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Cleanup on unload
     window.addEventListener("beforeunload", () => {
         stopLiveSync(); // Cleanly disconnect Firebase listener
+        stopCustomerSettingsSync();
         cleanupPopup();
     });
 
@@ -201,14 +207,16 @@ function applyShopSettings(settings, waNumber) {
     const waFooterBtn = document.getElementById("footer-wa");
     if (waFooterBtn) waFooterBtn.href = waHref;
 
-    // Social links (only show if set)
-    if (settings && settings.facebook) {
-        const fbEl = document.getElementById("footer-fb");
-        if (fbEl) { fbEl.href = settings.facebook; fbEl.style.display = ""; }
+    const fbEl = document.getElementById("footer-fb");
+    if (fbEl) {
+        fbEl.href = settings?.facebook || "#";
+        fbEl.style.display = settings?.facebook ? "" : "none";
     }
-    if (settings && settings.instagram) {
-        const igEl = document.getElementById("footer-ig");
-        if (igEl) { igEl.href = settings.instagram; igEl.style.display = ""; }
+
+    const igEl = document.getElementById("footer-ig");
+    if (igEl) {
+        igEl.href = settings?.instagram || "#";
+        igEl.style.display = settings?.instagram ? "" : "none";
     }
 }
 

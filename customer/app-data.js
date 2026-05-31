@@ -50,11 +50,28 @@ export {
 // ══════════════════════════════════════════
 //  SHOP SETTINGS (from Firebase)
 // ══════════════════════════════════════════
-import { ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { ref, get, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 let _shopSettings    = null;
+let _shopTemplates   = {};
 let _settingsFetched = false;
 let _cachedWaNumber  = ""; // sync-ccessible after preloaad
+let _settingsUnsubs  = [];
+
+function _applyShopSettings(settings = {}) {
+    _shopSettings = settings || {};
+    _cachedWaNumber = ((_shopSettings && _shopSettings.whatsapp)
+        ? String(_shopSettings.whatsapp) : "").replace(/\D/g, "");
+    _settingsFetched = true;
+    try { localStorage.setItem("v3_shopSettings", JSON.stringify(_shopSettings)); } catch(e) {}
+    return _shopSettings;
+}
+
+function _applyShopTemplates(templates = {}) {
+    _shopTemplates = templates || {};
+    try { localStorage.setItem("v3_shopTemplates", JSON.stringify(_shopTemplates)); } catch(e) {}
+    return _shopTemplates;
+}
 
 export async function getShopSettings() {
     if (_settingsFetched) return _shopSettings || {};
@@ -65,15 +82,12 @@ export async function getShopSettings() {
     
     if (cachedStr) {
         try {
-            _shopSettings = JSON.parse(cachedStr);
-            _cachedWaNumber = ((_shopSettings && _shopSettings.whatsapp)
-                ? String(_shopSettings.whatsapp) : "").replace(/\D/g, "");
-            _settingsFetched = true;
+            _applyShopSettings(JSON.parse(cachedStr));
             
             // 2. Silently fetch from Firebase in background to keep cache fresh for next visit
             get(ref(db, "settings/shop")).then(snap => {
                 if (snap.exists()) {
-                    try { localStorage.setItem("v3_shopSettings", JSON.stringify(snap.val())); } catch(e) {}
+                    _applyShopSettings(snap.val());
                 }
             }).catch(() => {});
             
@@ -84,21 +98,67 @@ export async function getShopSettings() {
     // 3. Fallback: Fetch directly if no cache exists
     try {
         const snap = await get(ref(db, "settings/shop"));
-        _shopSettings = snap.exists() ? snap.val() : {};
-        try { localStorage.setItem("v3_shopSettings", JSON.stringify(_shopSettings)); } catch(e) {}
+        _applyShopSettings(snap.exists() ? snap.val() : {});
     } catch (_) {
-        _shopSettings = {};
+        _applyShopSettings({});
     }
     
-    // Cache WA number for sync access
-    _cachedWaNumber = ((_shopSettings && _shopSettings.whatsapp)
-        ? String(_shopSettings.whatsapp) : "").replace(/\D/g, "");
-    _settingsFetched = true;
     return _shopSettings;
+}
+
+export async function getShopTemplates() {
+    if (_shopTemplates && Object.keys(_shopTemplates).length) return _shopTemplates;
+
+    let cachedStr = null;
+    try { cachedStr = localStorage.getItem("v3_shopTemplates"); } catch(e) {}
+    if (cachedStr) {
+        try {
+            _applyShopTemplates(JSON.parse(cachedStr));
+            get(ref(db, "settings/templates")).then(snap => {
+                if (snap.exists()) _applyShopTemplates(snap.val());
+            }).catch(() => {});
+            return _shopTemplates;
+        } catch(e) {}
+    }
+
+    try {
+        const snap = await get(ref(db, "settings/templates"));
+        _applyShopTemplates(snap.exists() ? snap.val() : {});
+    } catch (_) {
+        _applyShopTemplates({});
+    }
+    return _shopTemplates;
+}
+
+export function startCustomerSettingsSync(onShopSettings) {
+    stopCustomerSettingsSync();
+
+    const shopUnsub = onValue(ref(db, "settings/shop"), snap => {
+        const settings = _applyShopSettings(snap.exists() ? snap.val() : {});
+        if (typeof onShopSettings === "function") onShopSettings(settings, _cachedWaNumber);
+    }, err => {
+        console.warn("[settings] shop sync error:", err.message);
+    });
+
+    const templateUnsub = onValue(ref(db, "settings/templates"), snap => {
+        _applyShopTemplates(snap.exists() ? snap.val() : {});
+    }, err => {
+        console.warn("[settings] template sync error:", err.message);
+    });
+
+    _settingsUnsubs = [shopUnsub, templateUnsub];
+}
+
+export function stopCustomerSettingsSync() {
+    _settingsUnsubs.forEach(unsub => {
+        try { unsub(); } catch (_) {}
+    });
+    _settingsUnsubs = [];
 }
 
 export function clearSettingsCache() {
     _shopSettings    = null;
+    _shopTemplates   = {};
     _settingsFetched = false;
     _cachedWaNumber  = "";
 }
@@ -281,22 +341,39 @@ export async function submitLead({ phone, name = "", source = "popup", page = ""
 // ══════════════════════════════════════════
 
 // ── Shared message composer (pure sync, no network) ──
+function _fillTemplate(template, values = {}) {
+    return String(template || "").replace(/\{(\w+)\}/g, (_, key) => {
+        const value = values[key];
+        return value == null ? "" : String(value);
+    }).trim();
+}
+
 function _composeOrderMessage(product, qty, pickupTime = "") {
     const salePrice = Number(product.price) || 0;
     const origPrice = Number(product.meta?.originalPrice) || 0;
+    const total = salePrice * qty;
 
     const discountLine = (origPrice > 0 && origPrice > salePrice)
         ? `Orig: Rs.${origPrice.toLocaleString()} → Sale: Rs.${salePrice.toLocaleString()} (${Math.round((1 - salePrice / origPrice) * 100)}% OFF)`
         : `Rs.${salePrice.toLocaleString()}`;
 
+    const templateLine = _fillTemplate(_shopTemplates.orderMessage, {
+        product: product.title || "Item",
+        price: salePrice.toLocaleString(),
+        qty,
+        total: total.toLocaleString(),
+        pickup: pickupTime,
+        category: product.category || "Bakery",
+    });
+
     const lines = [
-        `Hello! 🙏 I'd like to *pre-order* from *V3 Cafe*`,
+        templateLine || "Hello! I'd like to pre-order from V3 Cafe",
         ``,
         `🧁 *${product.title || "Item"}*`,
         `📂 Category: ${product.category || "Bakery"}`,
         `💰 Price: ${discountLine}`,
         `🔢 Qty: ${qty}`,
-        `💵 Total: Rs.${(salePrice * qty).toLocaleString()}`,
+        `Total: Rs.${total.toLocaleString()}`,
         `🏪 Pickup: From store (I'll come to collect)`,
         pickupTime ? `📅 Pickup Time: ${pickupTime}` : null,
     ].filter(Boolean);
@@ -345,8 +422,17 @@ export async function buildCustomCakeWhatsAppUrl({ name, desc, occasion, date, b
     if (!waNumber || waNumber.includes("X")) {
         throw new Error("WhatsApp number not configured. Please update Settings in the Admin Panel.");
     }
+    await getShopTemplates();
+    const templateLine = _fillTemplate(_shopTemplates.customCakeMessage, {
+        name,
+        desc,
+        description: desc,
+        occasion,
+        date,
+        budget,
+    });
     const parts = [
-        "Hello! I want to request a *Custom Cake* 🎂",
+        templateLine || "Hello! I want to request a custom cake",
         name     ? `👤 Name: ${name}`         : null,
         desc     ? `📝 Cake Details: ${desc}` : null,
         occasion ? `🎉 Occasion: ${occasion}` : null,
